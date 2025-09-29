@@ -1,0 +1,9741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>粵語詞彙閃卡</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+        }
+        .card-container {
+            perspective: 1000px;
+        }
+        .card {
+            width: 100%;
+            height: 400px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+        }
+        .card.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 1rem; /* rounded-xl */
+            padding: 2.5rem; /* p-10 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-2xl */
+        }
+        .card-face.front {
+            background-color: #313643;
+            color: #f7fafc;
+        }
+        .card-face.back {
+            background-color: #4a5568;
+            color: #f7fafc;
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <main class="w-full max-w-lg">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold mb-2 text-white">粵語詞彙閃卡</h1>
+            <p class="text-gray-400">點擊閃卡來翻轉並聆聽發音。</p>
+        </div>
+
+        <div id="card-container" class="card-container">
+            <div id="flashcard" class="card">
+                <div id="card-front" class="card-face front">
+                    <span id="number-display" class="text-4xl text-gray-400 font-bold mb-4"></span>
+                    <span id="char-display" class="text-8xl font-bold leading-none"></span>
+                </div>
+                <div id="card-back" class="card-face back flex-col space-y-4">
+                    <div id="vocab-display" class="flex flex-col space-y-2">
+                        <!-- Vocabulary will be inserted here by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row justify-between items-center mt-8 space-y-4 md:space-y-0 md:space-x-4">
+            <button id="prev-btn" class="w-full md:w-auto bg-gray-700 text-white font-semibold py-3 px-6 rounded-full transition-colors duration-200 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                上一頁
+            </button>
+            <div class="flex items-center space-x-2 w-full md:w-auto">
+                <input type="number" id="card-number-input" placeholder="跳轉至卡片..." class="w-full text-center p-3 rounded-full text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button id="go-btn" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-full transition-colors duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    前往
+                </button>
+            </div>
+            <button id="next-btn" class="w-full md:w-auto bg-blue-600 text-white font-semibold py-3 px-6 rounded-full transition-colors duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                下一頁
+            </button>
+        </div>
+
+        <div class="flex justify-center mt-4">
+            <button id="random-btn" class="w-full md:w-auto bg-purple-600 text-white font-semibold py-3 px-8 rounded-full transition-colors duration-200 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                隨機排序
+            </button>
+        </div>
+
+        <div id="message-box" class="fixed bottom-4 left-1/2 -translate-x-1/2 p-4 rounded-xl bg-red-600 text-white shadow-xl transition-all duration-300 hidden">
+            <p id="message-text"></p>
+        </div>
+    </main>
+
+    <script>
+        // Data for the flashcards
+        // -----------------------------------------------------------
+        // 請將您從 Google Sheet 複製的完整 JSON 數組粘貼到下方：
+        // *** 重要提示：確保粘貼的內容是從第一個 [ 開始，到最後一個 ] 結束。 ***
+        // -----------------------------------------------------------
+        const flashcardData = [
+
+{
+"Number": 1,
+"Char": "的",
+"jyutping": "dik1",
+"vocab": [
+{
+"word": "目的",
+"jyutping": ""
+},
+{
+"word": "確定",
+"jyutping": ""
+},
+{
+"word": "程度",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 2,
+"Char": "一",
+"jyutping": "jat1",
+"vocab": [
+{
+"word": "一個",
+"jyutping": ""
+},
+{
+"word": "一切",
+"jyutping": ""
+},
+{
+"word": "一致",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 3,
+"Char": "是",
+"jyutping": "si6",
+"vocab": [
+{
+"word": "是否",
+"jyutping": ""
+},
+{
+"word": "於是",
+"jyutping": ""
+},
+{
+"word": "總是",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 4,
+"Char": "在",
+"jyutping": "zoi6",
+"vocab": [
+{
+"word": "在於",
+"jyutping": ""
+},
+{
+"word": "現在",
+"jyutping": ""
+},
+{
+"word": "存在",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 5,
+"Char": "不",
+"jyutping": "bat1",
+"vocab": [
+{
+"word": "不過",
+"jyutping": ""
+},
+{
+"word": "不能",
+"jyutping": ""
+},
+{
+"word": "不必",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 6,
+"Char": "了",
+"jyutping": "liu5",
+"vocab": [
+{
+"word": "了解",
+"jyutping": ""
+},
+{
+"word": "完成了",
+"jyutping": ""
+},
+{
+"word": "算了",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 7,
+"Char": "有",
+"jyutping": "jau5",
+"vocab": [
+{
+"word": "沒有",
+"jyutping": ""
+},
+{
+"word": "所有",
+"jyutping": ""
+},
+{
+"word": "擁有",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 8,
+"Char": "和",
+"jyutping": "wo4",
+"vocab": [
+{
+"word": "和平",
+"jyutping": ""
+},
+{
+"word": "總和",
+"jyutping": ""
+},
+{
+"word": "和氣",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 9,
+"Char": "人",
+"jyutping": "jan4",
+"vocab": [
+{
+"word": "人民",
+"jyutping": ""
+},
+{
+"word": "個人",
+"jyutping": ""
+},
+{
+"word": "人類",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 10,
+"Char": "這",
+"jyutping": "ze5",
+"vocab": [
+{
+"word": "這裡",
+"jyutping": ""
+},
+{
+"word": "這些",
+"jyutping": ""
+},
+{
+"word": "這個",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 11,
+"Char": "中",
+"jyutping": "zung1",
+"vocab": [
+{
+"word": "中國",
+"jyutping": ""
+},
+{
+"word": "其中",
+"jyutping": ""
+},
+{
+"word": "集中",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 12,
+"Char": "大",
+"jyutping": "daai6",
+"vocab": [
+{
+"word": "大學",
+"jyutping": ""
+},
+{
+"word": "大家",
+"jyutping": ""
+},
+{
+"word": "大量",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 13,
+"Char": "為",
+"jyutping": "wai4",
+"vocab": [
+{
+"word": "因為",
+"jyutping": ""
+},
+{
+"word": "行為",
+"jyutping": ""
+},
+{
+"word": "認為",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 14,
+"Char": "上",
+"jyutping": "soeng6",
+"vocab": [
+{
+"word": "上海",
+"jyutping": ""
+},
+{
+"word": "上升",
+"jyutping": ""
+},
+{
+"word": "以上",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 15,
+"Char": "個",
+"jyutping": "go3",
+"vocab": [
+{
+"word": "個人",
+"jyutping": ""
+},
+{
+"word": "個別",
+"jyutping": ""
+},
+{
+"word": "個性",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 16,
+"Char": "國",
+"jyutping": "gwok3",
+"vocab": [
+{
+"word": "中國",
+"jyutping": ""
+},
+{
+"word": "國家",
+"jyutping": ""
+},
+{
+"word": "國際",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 17,
+"Char": "我",
+"jyutping": "ngo5",
+"vocab": [
+{
+"word": "我們",
+"jyutping": ""
+},
+{
+"word": "自我",
+"jyutping": ""
+},
+{
+"word": "我國",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 18,
+"Char": "以",
+"jyutping": "ji5",
+"vocab": [
+{
+"word": "以及",
+"jyutping": ""
+},
+{
+"word": "可以",
+"jyutping": ""
+},
+{
+"word": "以為",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 19,
+"Char": "要",
+"jyutping": "jiu3",
+"vocab": [
+{
+"word": "重要",
+"jyutping": ""
+},
+{
+"word": "主要",
+"jyutping": ""
+},
+{
+"word": "需要",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 20,
+"Char": "地",
+"jyutping": "dei6",
+"vocab": [
+{
+"word": "地方",
+"jyutping": ""
+},
+{
+"word": "地區",
+"jyutping": ""
+},
+{
+"word": "地位",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 21,
+"Char": "他",
+"jyutping": "taa1",
+"vocab": [
+{
+"word": "其他",
+"jyutping": ""
+},
+{
+"word": "他們",
+"jyutping": ""
+},
+{
+"word": "他人",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 22,
+"Char": "時",
+"jyutping": "si4",
+"vocab": [
+{
+"word": "時間",
+"jyutping": ""
+},
+{
+"word": "同時",
+"jyutping": ""
+},
+{
+"word": "時期",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 23,
+"Char": "來",
+"jyutping": "loi4",
+"vocab": [
+{
+"word": "未來",
+"jyutping": ""
+},
+{
+"word": "來源",
+"jyutping": ""
+},
+{
+"word": "來自",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 24,
+"Char": "用",
+"jyutping": "jung6",
+"vocab": [
+{
+"word": "使用",
+"jyutping": ""
+},
+{
+"word": "作用",
+"jyutping": ""
+},
+{
+"word": "利用",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 25,
+"Char": "們",
+"jyutping": "mun4",
+"vocab": [
+{
+"word": "我們",
+"jyutping": ""
+},
+{
+"word": "他們",
+"jyutping": ""
+},
+{
+"word": "你們",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 26,
+"Char": "生",
+"jyutping": "sang1",
+"vocab": [
+{
+"word": "學生",
+"jyutping": ""
+},
+{
+"word": "生活",
+"jyutping": ""
+},
+{
+"word": "產生",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 27,
+"Char": "到",
+"jyutping": "dou3",
+"vocab": [
+{
+"word": "達到",
+"jyutping": ""
+},
+{
+"word": "收到",
+"jyutping": ""
+},
+{
+"word": "到底",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 28,
+"Char": "作",
+"jyutping": "zok3",
+"vocab": [
+{
+"word": "工作",
+"jyutping": ""
+},
+{
+"word": "作用",
+"jyutping": ""
+},
+{
+"word": "作為",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 29,
+"Char": "出",
+"jyutping": "ceot1",
+"vocab": [
+{
+"word": "出現",
+"jyutping": ""
+},
+{
+"word": "出來",
+"jyutping": ""
+},
+{
+"word": "發出",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 30,
+"Char": "就",
+"jyutping": "zau6",
+"vocab": [
+{
+"word": "就是",
+"jyutping": ""
+},
+{
+"word": "成就",
+"jyutping": ""
+},
+{
+"word": "就業",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 31,
+"Char": "分",
+"jyutping": "fan1",
+"vocab": [
+{
+"word": "部分",
+"jyutping": ""
+},
+{
+"word": "分析",
+"jyutping": ""
+},
+{
+"word": "分鐘",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 32,
+"Char": "於",
+"jyutping": "jyu1",
+"vocab": [
+{
+"word": "關於",
+"jyutping": ""
+},
+{
+"word": "等於",
+"jyutping": ""
+},
+{
+"word": "於是",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 33,
+"Char": "對",
+"jyutping": "deoi3",
+"vocab": [
+{
+"word": "對話",
+"jyutping": ""
+},
+{
+"word": "對象",
+"jyutping": ""
+},
+{
+"word": "對比",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 34,
+"Char": "成",
+"jyutping": "sing4",
+"vocab": [
+{
+"word": "形成",
+"jyutping": ""
+},
+{
+"word": "完成",
+"jyutping": ""
+},
+{
+"word": "變成",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 35,
+"Char": "會",
+"jyutping": "wui6",
+"vocab": [
+{
+"word": "機會",
+"jyutping": ""
+},
+{
+"word": "社會",
+"jyutping": ""
+},
+{
+"word": "會議",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 36,
+"Char": "可",
+"jyutping": "ho2",
+"vocab": [
+{
+"word": "可以",
+"jyutping": ""
+},
+{
+"word": "可能",
+"jyutping": ""
+},
+{
+"word": "可愛",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 37,
+"Char": "主",
+"jyutping": "zyu2",
+"vocab": [
+{
+"word": "主要",
+"jyutping": ""
+},
+{
+"word": "主題",
+"jyutping": ""
+},
+{
+"word": "主人",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 38,
+"Char": "發",
+"jyutping": "faat3",
+"vocab": [
+{
+"word": "發生",
+"jyutping": ""
+},
+{
+"word": "發展",
+"jyutping": ""
+},
+{
+"word": "發現",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 39,
+"Char": "年",
+"jyutping": "nin4",
+"vocab": [
+{
+"word": "每年",
+"jyutping": ""
+},
+{
+"word": "去年",
+"jyutping": ""
+},
+{
+"word": "多年",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 40,
+"Char": "動",
+"jyutping": "dung6",
+"vocab": [
+{
+"word": "活動",
+"jyutping": ""
+},
+{
+"word": "行動",
+"jyutping": ""
+},
+{
+"word": "動物",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 41,
+"Char": "同",
+"jyutping": "tung4",
+"vocab": [
+{
+"word": "同意",
+"jyutping": ""
+},
+{
+"word": "同時",
+"jyutping": ""
+},
+{
+"word": "共同",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 42,
+"Char": "工",
+"jyutping": "gung1",
+"vocab": [
+{
+"word": "工作",
+"jyutping": ""
+},
+{
+"word": "工業",
+"jyutping": ""
+},
+{
+"word": "工人",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 43,
+"Char": "也",
+"jyutping": "jaa5",
+"vocab": [
+{
+"word": "而且",
+"jyutping": ""
+},
+{
+"word": "也許",
+"jyutping": ""
+},
+{
+"word": "也是",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 44,
+"Char": "能",
+"jyutping": "nang4",
+"vocab": [
+{
+"word": "能夠",
+"jyutping": ""
+},
+{
+"word": "能力",
+"jyutping": ""
+},
+{
+"word": "能源",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 45,
+"Char": "下",
+"jyutping": "haa6",
+"vocab": [
+{
+"word": "以下",
+"jyutping": ""
+},
+{
+"word": "下次",
+"jyutping": ""
+},
+{
+"word": "下午",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 46,
+"Char": "過",
+"jyutping": "gwo3",
+"vocab": [
+{
+"word": "經過",
+"jyutping": ""
+},
+{
+"word": "超過",
+"jyutping": ""
+},
+{
+"word": "過程",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 47,
+"Char": "子",
+"jyutping": "zi2",
+"vocab": [
+{
+"word": "孩子",
+"jyutping": ""
+},
+{
+"word": "兒子",
+"jyutping": ""
+},
+{
+"word": "分子",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 48,
+"Char": "說",
+"jyutping": "syut3",
+"vocab": [
+{
+"word": "解說",
+"jyutping": ""
+},
+{
+"word": "學說",
+"jyutping": ""
+},
+{
+"word": "小說",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 49,
+"Char": "產",
+"jyutping": "caan2",
+"vocab": [
+{
+"word": "生產",
+"jyutping": ""
+},
+{
+"word": "產品",
+"jyutping": ""
+},
+{
+"word": "財產",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 50,
+"Char": "種",
+"jyutping": "zung2",
+"vocab": [
+{
+"word": "各種",
+"jyutping": ""
+},
+{
+"word": "種植",
+"jyutping": ""
+},
+{
+"word": "物種",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 51,
+"Char": "行",
+"jyutping": "hang4",
+"vocab": [
+{
+"word": "行動",
+"jyutping": ""
+},
+{
+"word": "行業",
+"jyutping": ""
+},
+{
+"word": "進行",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 52,
+"Char": "而",
+"jyutping": "ji4",
+"vocab": [
+{
+"word": "而且",
+"jyutping": ""
+},
+{
+"word": "反而",
+"jyutping": ""
+},
+{
+"word": "然而",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 53,
+"Char": "方",
+"jyutping": "fong1",
+"vocab": [
+{
+"word": "方面",
+"jyutping": ""
+},
+{
+"word": "方法",
+"jyutping": ""
+},
+{
+"word": "地方",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 54,
+"Char": "面",
+"jyutping": "min6",
+"vocab": [
+{
+"word": "表面",
+"jyutping": ""
+},
+{
+"word": "面對",
+"jyutping": ""
+},
+{
+"word": "面積",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 55,
+"Char": "後",
+"jyutping": "hau6",
+"vocab": [
+{
+"word": "然後",
+"jyutping": ""
+},
+{
+"word": "後果",
+"jyutping": ""
+},
+{
+"word": "最後",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 56,
+"Char": "多",
+"jyutping": "do1",
+"vocab": [
+{
+"word": "許多",
+"jyutping": ""
+},
+{
+"word": "多數",
+"jyutping": ""
+},
+{
+"word": "多少",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 57,
+"Char": "定",
+"jyutping": "ding6",
+"vocab": [
+{
+"word": "決定",
+"jyutping": ""
+},
+{
+"word": "肯定",
+"jyutping": ""
+},
+{
+"word": "規定",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 58,
+"Char": "學",
+"jyutping": "hok6",
+"vocab": [
+{
+"word": "學習",
+"jyutping": ""
+},
+{
+"word": "學校",
+"jyutping": ""
+},
+{
+"word": "科學",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 59,
+"Char": "法",
+"jyutping": "faat3",
+"vocab": [
+{
+"word": "法律",
+"jyutping": ""
+},
+{
+"word": "方法",
+"jyutping": ""
+},
+{
+"word": "法國",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 60,
+"Char": "所",
+"jyutping": "so2",
+"vocab": [
+{
+"word": "所有",
+"jyutping": ""
+},
+{
+"word": "所以",
+"jyutping": ""
+},
+{
+"word": "場所",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 61,
+"Char": "民",
+"jyutping": "man4",
+"vocab": [
+{
+"word": "人民",
+"jyutping": ""
+},
+{
+"word": "民主",
+"jyutping": ""
+},
+{
+"word": "公民",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 62,
+"Char": "得",
+"jyutping": "dak1",
+"vocab": [
+{
+"word": "覺得",
+"jyutping": ""
+},
+{
+"word": "獲得",
+"jyutping": ""
+},
+{
+"word": "應得",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 63,
+"Char": "經",
+"jyutping": "ging1",
+"vocab": [
+{
+"word": "經濟",
+"jyutping": ""
+},
+{
+"word": "經驗",
+"jyutping": ""
+},
+{
+"word": "經過",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 64,
+"Char": "十",
+"jyutping": "sap6",
+"vocab": [
+{
+"word": "數十",
+"jyutping": ""
+},
+{
+"word": "十月",
+"jyutping": ""
+},
+{
+"word": "十分",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 65,
+"Char": "三",
+"jyutping": "saam1",
+"vocab": [
+{
+"word": "第三",
+"jyutping": ""
+},
+{
+"word": "三月",
+"jyutping": ""
+},
+{
+"word": "三次",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 66,
+"Char": "之",
+"jyutping": "zi1",
+"vocab": [
+{
+"word": "之一",
+"jyutping": ""
+},
+{
+"word": "總之",
+"jyutping": ""
+},
+{
+"word": "在此",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 67,
+"Char": "進",
+"jyutping": "zeon3",
+"vocab": [
+{
+"word": "進口",
+"jyutping": ""
+},
+{
+"word": "進行",
+"jyutping": ""
+},
+{
+"word": "進步",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 68,
+"Char": "等",
+"jyutping": "dang2",
+"vocab": [
+{
+"word": "等於",
+"jyutping": ""
+},
+{
+"word": "等等",
+"jyutping": ""
+},
+{
+"word": "等待",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 69,
+"Char": "部",
+"jyutping": "bou6",
+"vocab": [
+{
+"word": "部門",
+"jyutping": ""
+},
+{
+"word": "部分",
+"jyutping": ""
+},
+{
+"word": "全部",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 70,
+"Char": "度",
+"jyutping": "dou6",
+"vocab": [
+{
+"word": "制度",
+"jyutping": ""
+},
+{
+"word": "程度",
+"jyutping": ""
+},
+{
+"word": "度過",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 71,
+"Char": "家",
+"jyutping": "gaa1",
+"vocab": [
+{
+"word": "國家",
+"jyutping": ""
+},
+{
+"word": "大家",
+"jyutping": ""
+},
+{
+"word": "家庭",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 72,
+"Char": "電",
+"jyutping": "din6",
+"vocab": [
+{
+"word": "電力",
+"jyutping": ""
+},
+{
+"word": "電子",
+"jyutping": ""
+},
+{
+"word": "電腦",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 73,
+"Char": "力",
+"jyutping": "lik6",
+"vocab": [
+{
+"word": "能力",
+"jyutping": ""
+},
+{
+"word": "力量",
+"jyutping": ""
+},
+{
+"word": "努力",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 74,
+"Char": "如",
+"jyutping": "jyu4",
+"vocab": [
+{
+"word": "如果",
+"jyutping": ""
+},
+{
+"word": "例如",
+"jyutping": ""
+},
+{
+"word": "不如",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 75,
+"Char": "水",
+"jyutping": "seoi2",
+"vocab": [
+{
+"word": "水平",
+"jyutping": ""
+},
+{
+"word": "海水",
+"jyutping": ""
+},
+{
+"word": "水份",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 76,
+"Char": "化",
+"jyutping": "faa3",
+"vocab": [
+{
+"word": "文化",
+"jyutping": ""
+},
+{
+"word": "變化",
+"jyutping": ""
+},
+{
+"word": "化學",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 77,
+"Char": "高",
+"jyutping": "gou1",
+"vocab": [
+{
+"word": "提高",
+"jyutping": ""
+},
+{
+"word": "高等",
+"jyutping": ""
+},
+{
+"word": "高興",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 78,
+"Char": "都",
+"jyutping": "dou1",
+"vocab": [
+{
+"word": "首都",
+"jyutping": ""
+},
+{
+"word": "都是",
+"jyutping": ""
+},
+{
+"word": "都會",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 79,
+"Char": "自",
+"jyutping": "zi6",
+"vocab": [
+{
+"word": "自己",
+"jyutping": ""
+},
+{
+"word": "自然",
+"jyutping": ""
+},
+{
+"word": "自由",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 80,
+"Char": "二",
+"jyutping": "ji6",
+"vocab": [
+{
+"word": "第二",
+"jyutping": ""
+},
+{
+"word": "二手",
+"jyutping": ""
+},
+{
+"word": "二十",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 81,
+"Char": "理",
+"jyutping": "lei5",
+"vocab": [
+{
+"word": "理解",
+"jyutping": ""
+},
+{
+"word": "理論",
+"jyutping": ""
+},
+{
+"word": "處理",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 82,
+"Char": "起",
+"jyutping": "hei2",
+"vocab": [
+{
+"word": "起來",
+"jyutping": ""
+},
+{
+"word": "引起",
+"jyutping": ""
+},
+{
+"word": "開始",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 83,
+"Char": "小",
+"jyutping": "siu2",
+"vocab": [
+{
+"word": "小心",
+"jyutping": ""
+},
+{
+"word": "小說",
+"jyutping": ""
+},
+{
+"word": "小時",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 84,
+"Char": "長",
+"jyutping": "coeng4",
+"vocab": [
+{
+"word": "長期",
+"jyutping": ""
+},
+{
+"word": "長度",
+"jyutping": ""
+},
+{
+"word": "生長",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 85,
+"Char": "物",
+"jyutping": "mat6",
+"vocab": [
+{
+"word": "物質",
+"jyutping": ""
+},
+{
+"word": "動物",
+"jyutping": ""
+},
+{
+"word": "植物",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 86,
+"Char": "現",
+"jyutping": "jin6",
+"vocab": [
+{
+"word": "現在",
+"jyutping": ""
+},
+{
+"word": "出現",
+"jyutping": ""
+},
+{
+"word": "表現",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 87,
+"Char": "實",
+"jyutping": "sat6",
+"vocab": [
+{
+"word": "事實",
+"jyutping": ""
+},
+{
+"word": "實現",
+"jyutping": ""
+},
+{
+"word": "實際",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 88,
+"Char": "加",
+"jyutping": "gaa1",
+"vocab": [
+{
+"word": "增加",
+"jyutping": ""
+},
+{
+"word": "加入",
+"jyutping": ""
+},
+{
+"word": "加工",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 89,
+"Char": "量",
+"jyutping": "loeng4",
+"vocab": [
+{
+"word": "數量",
+"jyutping": ""
+},
+{
+"word": "衡量",
+"jyutping": ""
+},
+{
+"word": "重量",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 90,
+"Char": "兩",
+"jyutping": "loeng5",
+"vocab": [
+{
+"word": "兩者",
+"jyutping": ""
+},
+{
+"word": "兩國",
+"jyutping": ""
+},
+{
+"word": "兩次",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 91,
+"Char": "體",
+"jyutping": "tai2",
+"vocab": [
+{
+"word": "體系",
+"jyutping": ""
+},
+{
+"word": "體現",
+"jyutping": ""
+},
+{
+"word": "身體",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 92,
+"Char": "機",
+"jyutping": "gei1",
+"vocab": [
+{
+"word": "機會",
+"jyutping": ""
+},
+{
+"word": "機器",
+"jyutping": ""
+},
+{
+"word": "危機",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 93,
+"Char": "還",
+"jyutping": "waan4",
+"vocab": [
+{
+"word": "還有",
+"jyutping": ""
+},
+{
+"word": "還給",
+"jyutping": ""
+},
+{
+"word": "還原",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 94,
+"Char": "當",
+"jyutping": "dong1",
+"vocab": [
+{
+"word": "當然",
+"jyutping": ""
+},
+{
+"word": "當時",
+"jyutping": ""
+},
+{
+"word": "當局",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 95,
+"Char": "使",
+"jyutping": "si2",
+"vocab": [
+{
+"word": "使用",
+"jyutping": ""
+},
+{
+"word": "大使",
+"jyutping": ""
+},
+{
+"word": "即使",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 96,
+"Char": "點",
+"jyutping": "dim2",
+"vocab": [
+{
+"word": "特點",
+"jyutping": ""
+},
+{
+"word": "重點",
+"jyutping": ""
+},
+{
+"word": "點頭",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 97,
+"Char": "從",
+"jyutping": "cung4",
+"vocab": [
+{
+"word": "從來",
+"jyutping": ""
+},
+{
+"word": "從事",
+"jyutping": ""
+},
+{
+"word": "從中",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 98,
+"Char": "業",
+"jyutping": "jip6",
+"vocab": [
+{
+"word": "行業",
+"jyutping": ""
+},
+{
+"word": "工業",
+"jyutping": ""
+},
+{
+"word": "事業",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 99,
+"Char": "本",
+"jyutping": "bun2",
+"vocab": [
+{
+"word": "基本",
+"jyutping": ""
+},
+{
+"word": "本身",
+"jyutping": ""
+},
+{
+"word": "資本",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 100,
+"Char": "重",
+"jyutping": "cung5",
+"vocab": [
+{
+"word": "重要",
+"jyutping": ""
+},
+{
+"word": "重新",
+"jyutping": ""
+},
+{
+"word": "嚴重",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 101,
+"Char": "去",
+"jyutping": "heoi3",
+"vocab": [
+{
+"word": "過去",
+"jyutping": ""
+},
+{
+"word": "去年",
+"jyutping": ""
+},
+{
+"word": "除去",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 102,
+"Char": "把",
+"jyutping": "baa2",
+"vocab": [
+{
+"word": "把握",
+"jyutping": ""
+},
+{
+"word": "把手",
+"jyutping": ""
+},
+{
+"word": "把關",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 103,
+"Char": "性",
+"jyutping": "sing3",
+"vocab": [
+{
+"word": "性質",
+"jyutping": ""
+},
+{
+"word": "性能",
+"jyutping": ""
+},
+{
+"word": "性別",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 104,
+"Char": "好",
+"jyutping": "hou2",
+"vocab": [
+{
+"word": "好像",
+"jyutping": ""
+},
+{
+"word": "好處",
+"jyutping": ""
+},
+{
+"word": "友好",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 105,
+"Char": "應",
+"jyutping": "jing1",
+"vocab": [
+{
+"word": "應該",
+"jyutping": ""
+},
+{
+"word": "應用",
+"jyutping": ""
+},
+{
+"word": "反應",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 106,
+"Char": "開",
+"jyutping": "hoi1",
+"vocab": [
+{
+"word": "開始",
+"jyutping": ""
+},
+{
+"word": "開發",
+"jyutping": ""
+},
+{
+"word": "離開",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 107,
+"Char": "它",
+"jyutping": "taa1",
+"vocab": [
+{
+"word": "它們",
+"jyutping": ""
+},
+{
+"word": "它國",
+"jyutping": ""
+},
+{
+"word": "它的",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 108,
+"Char": "合",
+"jyutping": "hap6",
+"vocab": [
+{
+"word": "合作",
+"jyutping": ""
+},
+{
+"word": "合法",
+"jyutping": ""
+},
+{
+"word": "結合",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 109,
+"Char": "因",
+"jyutping": "jan1",
+"vocab": [
+{
+"word": "因為",
+"jyutping": ""
+},
+{
+"word": "原因",
+"jyutping": ""
+},
+{
+"word": "因素",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 110,
+"Char": "制",
+"jyutping": "zai3",
+"vocab": [
+{
+"word": "制度",
+"jyutping": ""
+},
+{
+"word": "制定",
+"jyutping": ""
+},
+{
+"word": "控制",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 111,
+"Char": "由",
+"jyutping": "jau4",
+"vocab": [
+{
+"word": "由於",
+"jyutping": ""
+},
+{
+"word": "理由",
+"jyutping": ""
+},
+{
+"word": "自由",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 112,
+"Char": "其",
+"jyutping": "kei4",
+"vocab": [
+{
+"word": "其實",
+"jyutping": ""
+},
+{
+"word": "其他",
+"jyutping": ""
+},
+{
+"word": "其中",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 113,
+"Char": "些",
+"jyutping": "se1",
+"vocab": [
+{
+"word": "這些",
+"jyutping": ""
+},
+{
+"word": "一些",
+"jyutping": ""
+},
+{
+"word": "有些",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 114,
+"Char": "然",
+"jyutping": "jin4",
+"vocab": [
+{
+"word": "自然",
+"jyutping": ""
+},
+{
+"word": "然後",
+"jyutping": ""
+},
+{
+"word": "當然",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 115,
+"Char": "前",
+"jyutping": "cin4",
+"vocab": [
+{
+"word": "之前",
+"jyutping": ""
+},
+{
+"word": "目前",
+"jyutping": ""
+},
+{
+"word": "前面",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 116,
+"Char": "外",
+"jyutping": "ngoi6",
+"vocab": [
+{
+"word": "外交",
+"jyutping": ""
+},
+{
+"word": "外國",
+"jyutping": ""
+},
+{
+"word": "此外",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 117,
+"Char": "天",
+"jyutping": "tin1",
+"vocab": [
+{
+"word": "天氣",
+"jyutping": ""
+},
+{
+"word": "天然",
+"jyutping": ""
+},
+{
+"word": "天空",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 118,
+"Char": "政",
+"jyutping": "zing3",
+"vocab": [
+{
+"word": "政治",
+"jyutping": ""
+},
+{
+"word": "政府",
+"jyutping": ""
+},
+{
+"word": "政策",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 119,
+"Char": "四",
+"jyutping": "sei3",
+"vocab": [
+{
+"word": "四周",
+"jyutping": ""
+},
+{
+"word": "第四",
+"jyutping": ""
+},
+{
+"word": "四月",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 120,
+"Char": "日",
+"jyutping": "jat6",
+"vocab": [
+{
+"word": "日本",
+"jyutping": ""
+},
+{
+"word": "日期",
+"jyutping": ""
+},
+{
+"word": "生日",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 121,
+"Char": "那",
+"jyutping": "naa5",
+"vocab": [
+{
+"word": "那裡",
+"jyutping": ""
+},
+{
+"word": "那些",
+"jyutping": ""
+},
+{
+"word": "那個",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 122,
+"Char": "社",
+"jyutping": "se5",
+"vocab": [
+{
+"word": "社會",
+"jyutping": ""
+},
+{
+"word": "社區",
+"jyutping": ""
+},
+{
+"word": "社長",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 123,
+"Char": "義",
+"jyutping": "ji6",
+"vocab": [
+{
+"word": "意義",
+"jyutping": ""
+},
+{
+"word": "主義",
+"jyutping": ""
+},
+{
+"word": "義務",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 124,
+"Char": "事",
+"jyutping": "si6",
+"vocab": [
+{
+"word": "事情",
+"jyutping": ""
+},
+{
+"word": "事故",
+"jyutping": ""
+},
+{
+"word": "事實",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 125,
+"Char": "平",
+"jyutping": "ping4",
+"vocab": [
+{
+"word": "平均",
+"jyutping": ""
+},
+{
+"word": "水平",
+"jyutping": ""
+},
+{
+"word": "和平",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 126,
+"Char": "形",
+"jyutping": "jing4",
+"vocab": [
+{
+"word": "形成",
+"jyutping": ""
+},
+{
+"word": "形狀",
+"jyutping": ""
+},
+{
+"word": "形式",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 127,
+"Char": "相",
+"jyutping": "soeng1",
+"vocab": [
+{
+"word": "相信",
+"jyutping": ""
+},
+{
+"word": "相對",
+"jyutping": ""
+},
+{
+"word": "相等",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 128,
+"Char": "全",
+"jyutping": "cyun4",
+"vocab": [
+{
+"word": "全部",
+"jyutping": ""
+},
+{
+"word": "安全",
+"jyutping": ""
+},
+{
+"word": "全國",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 129,
+"Char": "裏",
+"jyutping": "leoi5",
+"vocab": [
+{
+"word": "裡面",
+"jyutping": ""
+},
+{
+"word": "心裏",
+"jyutping": ""
+},
+{
+"word": "裏面",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 130,
+"Char": "間",
+"jyutping": "gaan1",
+"vocab": [
+{
+"word": "時間",
+"jyutping": ""
+},
+{
+"word": "中間",
+"jyutping": ""
+},
+{
+"word": "空間",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 131,
+"Char": "樣",
+"jyutping": "joeng6",
+"vocab": [
+{
+"word": "樣子",
+"jyutping": ""
+},
+{
+"word": "這樣",
+"jyutping": ""
+},
+{
+"word": "同樣",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 132,
+"Char": "表",
+"jyutping": "biu2",
+"vocab": [
+{
+"word": "表示",
+"jyutping": ""
+},
+{
+"word": "表面",
+"jyutping": ""
+},
+{
+"word": "表格",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 133,
+"Char": "與",
+"jyutping": "jyu5",
+"vocab": [
+{
+"word": "參與",
+"jyutping": ""
+},
+{
+"word": "與此",
+"jyutping": ""
+},
+{
+"word": "與及",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 134,
+"Char": "關",
+"jyutping": "gwaan1",
+"vocab": [
+{
+"word": "關係",
+"jyutping": ""
+},
+{
+"word": "關於",
+"jyutping": ""
+},
+{
+"word": "關心",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 135,
+"Char": "各",
+"jyutping": "gok3",
+"vocab": [
+{
+"word": "各種",
+"jyutping": ""
+},
+{
+"word": "各自",
+"jyutping": ""
+},
+{
+"word": "各國",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 136,
+"Char": "新",
+"jyutping": "san1",
+"vocab": [
+{
+"word": "新聞",
+"jyutping": ""
+},
+{
+"word": "新興",
+"jyutping": ""
+},
+{
+"word": "創新",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 137,
+"Char": "線",
+"jyutping": "sin3",
+"vocab": [
+{
+"word": "線路",
+"jyutping": ""
+},
+{
+"word": "線索",
+"jyutping": ""
+},
+{
+"word": "直線",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 138,
+"Char": "內",
+"jyutping": "noi6",
+"vocab": [
+{
+"word": "內部",
+"jyutping": ""
+},
+{
+"word": "內容",
+"jyutping": ""
+},
+{
+"word": "國內",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 139,
+"Char": "數",
+"jyutping": "sou3",
+"vocab": [
+{
+"word": "數量",
+"jyutping": ""
+},
+{
+"word": "數字",
+"jyutping": ""
+},
+{
+"word": "數目",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 140,
+"Char": "正",
+"jyutping": "zing3",
+"vocab": [
+{
+"word": "正在",
+"jyutping": ""
+},
+{
+"word": "正確",
+"jyutping": ""
+},
+{
+"word": "正面",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 141,
+"Char": "心",
+"jyutping": "sam1",
+"vocab": [
+{
+"word": "中心",
+"jyutping": ""
+},
+{
+"word": "心理",
+"jyutping": ""
+},
+{
+"word": "核心",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 142,
+"Char": "反",
+"jyutping": "faan2",
+"vocab": [
+{
+"word": "反應",
+"jyutping": ""
+},
+{
+"word": "反對",
+"jyutping": ""
+},
+{
+"word": "反思",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 143,
+"Char": "你",
+"jyutping": "nei5",
+"vocab": [
+{
+"word": "你們",
+"jyutping": ""
+},
+{
+"word": "你好",
+"jyutping": ""
+},
+{
+"word": "與你",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 144,
+"Char": "明",
+"jyutping": "ming4",
+"vocab": [
+{
+"word": "明天",
+"jyutping": ""
+},
+{
+"word": "明顯",
+"jyutping": ""
+},
+{
+"word": "說明",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 145,
+"Char": "看",
+"jyutping": "hon3",
+"vocab": [
+{
+"word": "看法",
+"jyutping": ""
+},
+{
+"word": "看見",
+"jyutping": ""
+},
+{
+"word": "好看",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 146,
+"Char": "原",
+"jyutping": "jyun4",
+"vocab": [
+{
+"word": "原來",
+"jyutping": ""
+},
+{
+"word": "原因",
+"jyutping": ""
+},
+{
+"word": "原則",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 147,
+"Char": "又",
+"jyutping": "jau6",
+"vocab": [
+{
+"word": "又再",
+"jyutping": ""
+},
+{
+"word": "又是",
+"jyutping": ""
+},
+{
+"word": "又稱",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 148,
+"Char": "麼",
+"jyutping": "mo1",
+"vocab": [
+{
+"word": "什麼",
+"jyutping": ""
+},
+{
+"word": "那麼",
+"jyutping": ""
+},
+{
+"word": "怎麼",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 149,
+"Char": "利",
+"jyutping": "lei6",
+"vocab": [
+{
+"word": "利益",
+"jyutping": ""
+},
+{
+"word": "利用",
+"jyutping": ""
+},
+{
+"word": "勝利",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 150,
+"Char": "比",
+"jyutping": "bei2",
+"vocab": [
+{
+"word": "比較",
+"jyutping": ""
+},
+{
+"word": "比例",
+"jyutping": ""
+},
+{
+"word": "比如",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 151,
+"Char": "或",
+"jyutping": "waak6",
+"vocab": [
+{
+"word": "或者",
+"jyutping": ""
+},
+{
+"word": "或許",
+"jyutping": ""
+},
+{
+"word": "可能",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 152,
+"Char": "但",
+"jyutping": "daan6",
+"vocab": [
+{
+"word": "但是",
+"jyutping": ""
+},
+{
+"word": "不但",
+"jyutping": ""
+},
+{
+"word": "但願",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 153,
+"Char": "質",
+"jyutping": "zat1",
+"vocab": [
+{
+"word": "質量",
+"jyutping": ""
+},
+{
+"word": "物質",
+"jyutping": ""
+},
+{
+"word": "質問",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 154,
+"Char": "氣",
+"jyutping": "hei3",
+"vocab": [
+{
+"word": "氣候",
+"jyutping": ""
+},
+{
+"word": "空氣",
+"jyutping": ""
+},
+{
+"word": "氣氛",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 155,
+"Char": "第",
+"jyutping": "dai6",
+"vocab": [
+{
+"word": "第一",
+"jyutping": ""
+},
+{
+"word": "第二",
+"jyutping": ""
+},
+{
+"word": "次第",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 156,
+"Char": "向",
+"jyutping": "hoeng3",
+"vocab": [
+{
+"word": "方向",
+"jyutping": ""
+},
+{
+"word": "傾向",
+"jyutping": ""
+},
+{
+"word": "面向",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 157,
+"Char": "道",
+"jyutping": "dou6",
+"vocab": [
+{
+"word": "知道",
+"jyutping": ""
+},
+{
+"word": "道理",
+"jyutping": ""
+},
+{
+"word": "報道",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 158,
+"Char": "命",
+"jyutping": "ming6",
+"vocab": [
+{
+"word": "生命",
+"jyutping": ""
+},
+{
+"word": "命令",
+"jyutping": ""
+},
+{
+"word": "革命",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 159,
+"Char": "此",
+"jyutping": "ci2",
+"vocab": [
+{
+"word": "此外",
+"jyutping": ""
+},
+{
+"word": "從此",
+"jyutping": ""
+},
+{
+"word": "彼此",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 160,
+"Char": "沒",
+"jyutping": "mut6",
+"vocab": [
+{
+"word": "沒有",
+"jyutping": ""
+},
+{
+"word": "沒事",
+"jyutping": ""
+},
+{
+"word": "沒收",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 161,
+"Char": "變",
+"jyutping": "bin3",
+"vocab": [
+{
+"word": "變化",
+"jyutping": ""
+},
+{
+"word": "改變",
+"jyutping": ""
+},
+{
+"word": "變成",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 162,
+"Char": "條",
+"jyutping": "tiu4",
+"vocab": [
+{
+"word": "條件",
+"jyutping": ""
+},
+{
+"word": "條約",
+"jyutping": ""
+},
+{
+"word": "條理",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 163,
+"Char": "只",
+"jyutping": "zi2",
+"vocab": [
+{
+"word": "只有",
+"jyutping": ""
+},
+{
+"word": "只是",
+"jyutping": ""
+},
+{
+"word": "只好",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 164,
+"Char": "結",
+"jyutping": "git3",
+"vocab": [
+{
+"word": "結果",
+"jyutping": ""
+},
+{
+"word": "結合",
+"jyutping": ""
+},
+{
+"word": "結束",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 165,
+"Char": "解",
+"jyutping": "gaai2",
+"vocab": [
+{
+"word": "解決",
+"jyutping": ""
+},
+{
+"word": "解釋",
+"jyutping": ""
+},
+{
+"word": "了解",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 167,
+"Char": "意",
+"jyutping": "ji3",
+"vocab": [
+{
+"word": "意見",
+"jyutping": ""
+},
+{
+"word": "意思",
+"jyutping": ""
+},
+{
+"word": "意識",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 168,
+"Char": "建",
+"jyutping": "gin3",
+"vocab": [
+{
+"word": "建設",
+"jyutping": ""
+},
+{
+"word": "建議",
+"jyutping": ""
+},
+{
+"word": "建立",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 169,
+"Char": "月",
+"jyutping": "jyut6",
+"vocab": [
+{
+"word": "月份",
+"jyutping": ""
+},
+{
+"word": "月亮",
+"jyutping": ""
+},
+{
+"word": "每月",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 170,
+"Char": "公",
+"jyutping": "gung1",
+"vocab": [
+{
+"word": "公司",
+"jyutping": ""
+},
+{
+"word": "公共",
+"jyutping": ""
+},
+{
+"word": "公開",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 171,
+"Char": "無",
+"jyutping": "mou4",
+"vocab": [
+{
+"word": "無論",
+"jyutping": ""
+},
+{
+"word": "無法",
+"jyutping": ""
+},
+{
+"word": "無數",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 172,
+"Char": "軍",
+"jyutping": "gwan1",
+"vocab": [
+{
+"word": "軍事",
+"jyutping": ""
+},
+{
+"word": "軍隊",
+"jyutping": ""
+},
+{
+"word": "海軍",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 173,
+"Char": "很",
+"jyutping": "han2",
+"vocab": [
+{
+"word": "很好",
+"jyutping": ""
+},
+{
+"word": "很長",
+"jyutping": ""
+},
+{
+"word": "很難",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 174,
+"Char": "情",
+"jyutping": "cing4",
+"vocab": [
+{
+"word": "情況",
+"jyutping": ""
+},
+{
+"word": "情緒",
+"jyutping": ""
+},
+{
+"word": "愛情",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 175,
+"Char": "者",
+"jyutping": "ze2",
+"vocab": [
+{
+"word": "記者",
+"jyutping": ""
+},
+{
+"word": "學者",
+"jyutping": ""
+},
+{
+"word": "作者",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 176,
+"Char": "最",
+"jyutping": "zeoi3",
+"vocab": [
+{
+"word": "最近",
+"jyutping": ""
+},
+{
+"word": "最好",
+"jyutping": ""
+},
+{
+"word": "最多",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 177,
+"Char": "立",
+"jyutping": "lap6",
+"vocab": [
+{
+"word": "立即",
+"jyutping": ""
+},
+{
+"word": "建立",
+"jyutping": ""
+},
+{
+"word": "立場",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 178,
+"Char": "代",
+"jyutping": "doi6",
+"vocab": [
+{
+"word": "代表",
+"jyutping": ""
+},
+{
+"word": "時代",
+"jyutping": ""
+},
+{
+"word": "代替",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 179,
+"Char": "想",
+"jyutping": "soeng2",
+"vocab": [
+{
+"word": "思想",
+"jyutping": ""
+},
+{
+"word": "想法",
+"jyutping": ""
+},
+{
+"word": "想要",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 180,
+"Char": "已",
+"jyutping": "ji5",
+"vocab": [
+{
+"word": "已經",
+"jyutping": ""
+},
+{
+"word": "而已",
+"jyutping": ""
+},
+{
+"word": "以來",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 181,
+"Char": "通",
+"jyutping": "tung1",
+"vocab": [
+{
+"word": "通過",
+"jyutping": ""
+},
+{
+"word": "通知",
+"jyutping": ""
+},
+{
+"word": "交通",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 182,
+"Char": "提",
+"jyutping": "tai4",
+"vocab": [
+{
+"word": "提供",
+"jyutping": ""
+},
+{
+"word": "提出",
+"jyutping": ""
+},
+{
+"word": "提高",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 183,
+"Char": "直",
+"jyutping": "zik6",
+"vocab": [
+{
+"word": "直接",
+"jyutping": ""
+},
+{
+"word": "一直",
+"jyutping": ""
+},
+{
+"word": "直覺",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 184,
+"Char": "題",
+"jyutping": "tai4",
+"vocab": [
+{
+"word": "問題",
+"jyutping": ""
+},
+{
+"word": "題目",
+"jyutping": ""
+},
+{
+"word": "主題",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 185,
+"Char": "黨",
+"jyutping": "dong2",
+"vocab": [
+{
+"word": "黨員",
+"jyutping": ""
+},
+{
+"word": "政黨",
+"jyutping": ""
+},
+{
+"word": "共產黨",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 186,
+"Char": "程",
+"jyutping": "cing4",
+"vocab": [
+{
+"word": "過程",
+"jyutping": ""
+},
+{
+"word": "程度",
+"jyutping": ""
+},
+{
+"word": "程序",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 187,
+"Char": "展",
+"jyutping": "zin2",
+"vocab": [
+{
+"word": "發展",
+"jyutping": ""
+},
+{
+"word": "展覽",
+"jyutping": ""
+},
+{
+"word": "展開",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 188,
+"Char": "五",
+"jyutping": "ng5",
+"vocab": [
+{
+"word": "五月",
+"jyutping": ""
+},
+{
+"word": "五次",
+"jyutping": ""
+},
+{
+"word": "五個",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 189,
+"Char": "果",
+"jyutping": "gwo2",
+"vocab": [
+{
+"word": "結果",
+"jyutping": ""
+},
+{
+"word": "水果",
+"jyutping": ""
+},
+{
+"word": "後果",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 190,
+"Char": "料",
+"jyutping": "liu6",
+"vocab": [
+{
+"word": "材料",
+"jyutping": ""
+},
+{
+"word": "資料",
+"jyutping": ""
+},
+{
+"word": "預料",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 191,
+"Char": "象",
+"jyutping": "zoeng6",
+"vocab": [
+{
+"word": "對象",
+"jyutping": ""
+},
+{
+"word": "現象",
+"jyutping": ""
+},
+{
+"word": "形象",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 192,
+"Char": "員",
+"jyutping": "jyun4",
+"vocab": [
+{
+"word": "人員",
+"jyutping": ""
+},
+{
+"word": "成員",
+"jyutping": ""
+},
+{
+"word": "職員",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 193,
+"Char": "革",
+"jyutping": "gaak3",
+"vocab": [
+{
+"word": "改革",
+"jyutping": ""
+},
+{
+"word": "革命",
+"jyutping": ""
+},
+{
+"word": "皮革",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 194,
+"Char": "位",
+"jyutping": "wai2",
+"vocab": [
+{
+"word": "位置",
+"jyutping": ""
+},
+{
+"word": "單位",
+"jyutping": ""
+},
+{
+"word": "地位",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 195,
+"Char": "入",
+"jyutping": "jap6",
+"vocab": [
+{
+"word": "收入",
+"jyutping": ""
+},
+{
+"word": "進入",
+"jyutping": ""
+},
+{
+"word": "入口",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 196,
+"Char": "常",
+"jyutping": "soeng4",
+"vocab": [
+{
+"word": "經常",
+"jyutping": ""
+},
+{
+"word": "日常",
+"jyutping": ""
+},
+{
+"word": "常識",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 197,
+"Char": "文",
+"jyutping": "man4",
+"vocab": [
+{
+"word": "文件",
+"jyutping": ""
+},
+{
+"word": "文化",
+"jyutping": ""
+},
+{
+"word": "文章",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 198,
+"Char": "總",
+"jyutping": "zung2",
+"vocab": [
+{
+"word": "總結",
+"jyutping": ""
+},
+{
+"word": "總理",
+"jyutping": ""
+},
+{
+"word": "總共",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 199,
+"Char": "次",
+"jyutping": "ci3",
+"vocab": [
+{
+"word": "其次",
+"jyutping": ""
+},
+{
+"word": "下次",
+"jyutping": ""
+},
+{
+"word": "層次",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 200,
+"Char": "品",
+"jyutping": "ban2",
+"vocab": [
+{
+"word": "產品",
+"jyutping": ""
+},
+{
+"word": "品質",
+"jyutping": ""
+},
+{
+"word": "物品",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 201,
+"Char": "式",
+"jyutping": "sik1",
+"vocab": [
+{
+"word": "方式",
+"jyutping": ""
+},
+{
+"word": "形式",
+"jyutping": ""
+},
+{
+"word": "正式",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 202,
+"Char": "活",
+"jyutping": "wut6",
+"vocab": [
+{
+"word": "活動",
+"jyutping": ""
+},
+{
+"word": "生活",
+"jyutping": ""
+},
+{
+"word": "復活",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 203,
+"Char": "設",
+"jyutping": "cit3",
+"vocab": [
+{
+"word": "設計",
+"jyutping": ""
+},
+{
+"word": "建設",
+"jyutping": ""
+},
+{
+"word": "設置",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 204,
+"Char": "及",
+"jyutping": "kap6",
+"vocab": [
+{
+"word": "以及",
+"jyutping": ""
+},
+{
+"word": "不及",
+"jyutping": ""
+},
+{
+"word": "及時",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 205,
+"Char": "管",
+"jyutping": "gun2",
+"vocab": [
+{
+"word": "管理",
+"jyutping": ""
+},
+{
+"word": "儘管",
+"jyutping": ""
+},
+{
+"word": "不管",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 206,
+"Char": "特",
+"jyutping": "dak6",
+"vocab": [
+{
+"word": "特別",
+"jyutping": ""
+},
+{
+"word": "特點",
+"jyutping": ""
+},
+{
+"word": "特色",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 207,
+"Char": "件",
+"jyutping": "gin6",
+"vocab": [
+{
+"word": "事件",
+"jyutping": ""
+},
+{
+"word": "條件",
+"jyutping": ""
+},
+{
+"word": "文件",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 208,
+"Char": "求",
+"jyutping": "kau4",
+"vocab": [
+{
+"word": "要求",
+"jyutping": ""
+},
+{
+"word": "請求",
+"jyutping": ""
+},
+{
+"word": "尋求",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 209,
+"Char": "老",
+"jyutping": "lou5",
+"vocab": [
+{
+"word": "老師",
+"jyutping": ""
+},
+{
+"word": "老人",
+"jyutping": ""
+},
+{
+"word": "老闆",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 210,
+"Char": "頭",
+"jyutping": "tau4",
+"vocab": [
+{
+"word": "頭部",
+"jyutping": ""
+},
+{
+"word": "頭腦",
+"jyutping": ""
+},
+{
+"word": "開頭",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 211,
+"Char": "基",
+"jyutping": "gei1",
+"vocab": [
+{
+"word": "基本",
+"jyutping": ""
+},
+{
+"word": "基礎",
+"jyutping": ""
+},
+{
+"word": "基因",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 212,
+"Char": "資",
+"jyutping": "zi1",
+"vocab": [
+{
+"word": "資料",
+"jyutping": ""
+},
+{
+"word": "資金",
+"jyutping": ""
+},
+{
+"word": "資源",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 213,
+"Char": "邊",
+"jyutping": "bin1",
+"vocab": [
+{
+"word": "旁邊",
+"jyutping": ""
+},
+{
+"word": "邊緣",
+"jyutping": ""
+},
+{
+"word": "這邊",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 214,
+"Char": "流",
+"jyutping": "lau4",
+"vocab": [
+{
+"word": "流動",
+"jyutping": ""
+},
+{
+"word": "交流",
+"jyutping": ""
+},
+{
+"word": "流行",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 215,
+"Char": "路",
+"jyutping": "lou6",
+"vocab": [
+{
+"word": "道路",
+"jyutping": ""
+},
+{
+"word": "路線",
+"jyutping": ""
+},
+{
+"word": "公路",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 216,
+"Char": "級",
+"jyutping": "kap1",
+"vocab": [
+{
+"word": "級別",
+"jyutping": ""
+},
+{
+"word": "年級",
+"jyutping": ""
+},
+{
+"word": "高級",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 217,
+"Char": "少",
+"jyutping": "siu2",
+"vocab": [
+{
+"word": "少女",
+"jyutping": ""
+},
+{
+"word": "缺少",
+"jyutping": ""
+},
+{
+"word": "少數",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 218,
+"Char": "圖",
+"jyutping": "tou4",
+"vocab": [
+{
+"word": "圖片",
+"jyutping": ""
+},
+{
+"word": "地圖",
+"jyutping": ""
+},
+{
+"word": "意圖",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 219,
+"Char": "山",
+"jyutping": "saan1",
+"vocab": [
+{
+"word": "山區",
+"jyutping": ""
+},
+{
+"word": "山脈",
+"jyutping": ""
+},
+{
+"word": "山頂",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 220,
+"Char": "統",
+"jyutping": "tung2",
+"vocab": [
+{
+"word": "統計",
+"jyutping": ""
+},
+{
+"word": "系統",
+"jyutping": ""
+},
+{
+"word": "統一",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 221,
+"Char": "接",
+"jyutping": "zip3",
+"vocab": [
+{
+"word": "接受",
+"jyutping": ""
+},
+{
+"word": "連接",
+"jyutping": ""
+},
+{
+"word": "接觸",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 222,
+"Char": "知",
+"jyutping": "zi1",
+"vocab": [
+{
+"word": "知道",
+"jyutping": ""
+},
+{
+"word": "知識",
+"jyutping": ""
+},
+{
+"word": "通知",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 223,
+"Char": "較",
+"jyutping": "gaau3",
+"vocab": [
+{
+"word": "比較",
+"jyutping": ""
+},
+{
+"word": "較大",
+"jyutping": ""
+},
+{
+"word": "較好",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 224,
+"Char": "將",
+"jyutping": "zoeng1",
+"vocab": [
+{
+"word": "將來",
+"jyutping": ""
+},
+{
+"word": "將會",
+"jyutping": ""
+},
+{
+"word": "將軍",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 225,
+"Char": "組",
+"jyutping": "zou2",
+"vocab": [
+{
+"word": "組織",
+"jyutping": ""
+},
+{
+"word": "組合",
+"jyutping": ""
+},
+{
+"word": "小組",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 226,
+"Char": "見",
+"jyutping": "gin3",
+"vocab": [
+{
+"word": "意見",
+"jyutping": ""
+},
+{
+"word": "看見",
+"jyutping": ""
+},
+{
+"word": "見面",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 227,
+"Char": "計",
+"jyutping": "gai3",
+"vocab": [
+{
+"word": "計劃",
+"jyutping": ""
+},
+{
+"word": "計算",
+"jyutping": ""
+},
+{
+"word": "統計",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 228,
+"Char": "別",
+"jyutping": "bit6",
+"vocab": [
+{
+"word": "別人",
+"jyutping": ""
+},
+{
+"word": "特別",
+"jyutping": ""
+},
+{
+"word": "區別",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 229,
+"Char": "她",
+"jyutping": "taa1",
+"vocab": [
+{
+"word": "她們",
+"jyutping": ""
+},
+{
+"word": "她的",
+"jyutping": ""
+},
+{
+"word": "她倆",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 230,
+"Char": "手",
+"jyutping": "sau2",
+"vocab": [
+{
+"word": "手機",
+"jyutping": ""
+},
+{
+"word": "手術",
+"jyutping": ""
+},
+{
+"word": "人手",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 231,
+"Char": "角",
+"jyutping": "gok3",
+"vocab": [
+{
+"word": "角度",
+"jyutping": ""
+},
+{
+"word": "角色",
+"jyutping": ""
+},
+{
+"word": "角落",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 232,
+"Char": "期",
+"jyutping": "kei4",
+"vocab": [
+{
+"word": "期間",
+"jyutping": ""
+},
+{
+"word": "時期",
+"jyutping": ""
+},
+{
+"word": "期望",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 233,
+"Char": "根",
+"jyutping": "gan1",
+"vocab": [
+{
+"word": "根據",
+"jyutping": ""
+},
+{
+"word": "根本",
+"jyutping": ""
+},
+{
+"word": "根源",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 234,
+"Char": "論",
+"jyutping": "leon6",
+"vocab": [
+{
+"word": "理論",
+"jyutping": ""
+},
+{
+"word": "論壇",
+"jyutping": ""
+},
+{
+"word": "評論",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 235,
+"Char": "運",
+"jyutping": "wan6",
+"vocab": [
+{
+"word": "運動",
+"jyutping": ""
+},
+{
+"word": "運輸",
+"jyutping": ""
+},
+{
+"word": "命運",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 236,
+"Char": "農",
+"jyutping": "nung4",
+"vocab": [
+{
+"word": "農村",
+"jyutping": ""
+},
+{
+"word": "農業",
+"jyutping": ""
+},
+{
+"word": "農民",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 237,
+"Char": "指",
+"jyutping": "zi2",
+"vocab": [
+{
+"word": "指出",
+"jyutping": ""
+},
+{
+"word": "指導",
+"jyutping": ""
+},
+{
+"word": "指揮",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 238,
+"Char": "幾",
+"jyutping": "gei2",
+"vocab": [
+{
+"word": "幾個",
+"jyutping": ""
+},
+{
+"word": "幾乎",
+"jyutping": ""
+},
+{
+"word": "幾時",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 239,
+"Char": "九",
+"jyutping": "gau2",
+"vocab": [
+{
+"word": "九月",
+"jyutping": ""
+},
+{
+"word": "九次",
+"jyutping": ""
+},
+{
+"word": "第九",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 240,
+"Char": "區",
+"jyutping": "keoi1",
+"vocab": [
+{
+"word": "地區",
+"jyutping": ""
+},
+{
+"word": "區別",
+"jyutping": ""
+},
+{
+"word": "區域",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 241,
+"Char": "強",
+"jyutping": "koeng4",
+"vocab": [
+{
+"word": "強調",
+"jyutping": ""
+},
+{
+"word": "強大",
+"jyutping": ""
+},
+{
+"word": "加強",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 242,
+"Char": "放",
+"jyutping": "fong3",
+"vocab": [
+{
+"word": "放棄",
+"jyutping": ""
+},
+{
+"word": "開放",
+"jyutping": ""
+},
+{
+"word": "釋放",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 243,
+"Char": "決",
+"jyutping": "kyut3",
+"vocab": [
+{
+"word": "決定",
+"jyutping": ""
+},
+{
+"word": "解決",
+"jyutping": ""
+},
+{
+"word": "決心",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 244,
+"Char": "西",
+"jyutping": "sai1",
+"vocab": [
+{
+"word": "東西",
+"jyutping": ""
+},
+{
+"word": "西部",
+"jyutping": ""
+},
+{
+"word": "西藏",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 245,
+"Char": "被",
+"jyutping": "bei6",
+"vocab": [
+{
+"word": "被子",
+"jyutping": ""
+},
+{
+"word": "被動",
+"jyutping": ""
+},
+{
+"word": "被迫",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 246,
+"Char": "做",
+"jyutping": "zou6",
+"vocab": [
+{
+"word": "做法",
+"jyutping": ""
+},
+{
+"word": "做夢",
+"jyutping": ""
+},
+{
+"word": "做工",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 247,
+"Char": "必",
+"jyutping": "bit1",
+"vocab": [
+{
+"word": "必須",
+"jyutping": ""
+},
+{
+"word": "不必",
+"jyutping": ""
+},
+{
+"word": "必要",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 248,
+"Char": "戰",
+"jyutping": "zin3",
+"vocab": [
+{
+"word": "戰爭",
+"jyutping": ""
+},
+{
+"word": "挑戰",
+"jyutping": ""
+},
+{
+"word": "戰鬥",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 249,
+"Char": "先",
+"jyutping": "sin1",
+"vocab": [
+{
+"word": "先生",
+"jyutping": ""
+},
+{
+"word": "首先",
+"jyutping": ""
+},
+{
+"word": "先進",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 250,
+"Char": "則",
+"jyutping": "zak1",
+"vocab": [
+{
+"word": "原則",
+"jyutping": ""
+},
+{
+"word": "法則",
+"jyutping": ""
+},
+{
+"word": "否則",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 251,
+"Char": "任",
+"jyutping": "jam6",
+"vocab": [
+{
+"word": "任何",
+"jyutping": ""
+},
+{
+"word": "任務",
+"jyutping": ""
+},
+{
+"word": "擔任",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 252,
+"Char": "取",
+"jyutping": "ceoi2",
+"vocab": [
+{
+"word": "取得",
+"jyutping": ""
+},
+{
+"word": "取消",
+"jyutping": ""
+},
+{
+"word": "採取",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 253,
+"Char": "據",
+"jyutping": "geoi3",
+"vocab": [
+{
+"word": "根據",
+"jyutping": ""
+},
+{
+"word": "數據",
+"jyutping": ""
+},
+{
+"word": "據說",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 254,
+"Char": "回",
+"jyutping": "wui4",
+"vocab": [
+{
+"word": "回答",
+"jyutping": ""
+},
+{
+"word": "回憶",
+"jyutping": ""
+},
+{
+"word": "回家",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 255,
+"Char": "給",
+"jyutping": "kap1",
+"vocab": [
+{
+"word": "交給",
+"jyutping": ""
+},
+{
+"word": "給予",
+"jyutping": ""
+},
+{
+"word": "給予",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 256,
+"Char": "調",
+"jyutping": "tiu4",
+"vocab": [
+{
+"word": "調整",
+"jyutping": ""
+},
+{
+"word": "調查",
+"jyutping": ""
+},
+{
+"word": "空調",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 257,
+"Char": "處",
+"jyutping": "cyu3",
+"vocab": [
+{
+"word": "處理",
+"jyutping": ""
+},
+{
+"word": "處境",
+"jyutping": ""
+},
+{
+"word": "處罰",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 258,
+"Char": "隊",
+"jyutping": "deoi6",
+"vocab": [
+{
+"word": "隊伍",
+"jyutping": ""
+},
+{
+"word": "團隊",
+"jyutping": ""
+},
+{
+"word": "部隊",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 259,
+"Char": "南",
+"jyutping": "naam4",
+"vocab": [
+{
+"word": "南方",
+"jyutping": ""
+},
+{
+"word": "南邊",
+"jyutping": ""
+},
+{
+"word": "越南",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 260,
+"Char": "色",
+"jyutping": "sik1",
+"vocab": [
+{
+"word": "顏色",
+"jyutping": ""
+},
+{
+"word": "特色",
+"jyutping": ""
+},
+{
+"word": "角色",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 261,
+"Char": "光",
+"jyutping": "gwong1",
+"vocab": [
+{
+"word": "光線",
+"jyutping": ""
+},
+{
+"word": "目光",
+"jyutping": ""
+},
+{
+"word": "光明",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 262,
+"Char": "門",
+"jyutping": "mun4",
+"vocab": [
+{
+"word": "部門",
+"jyutping": ""
+},
+{
+"word": "門口",
+"jyutping": ""
+},
+{
+"word": "大門",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 263,
+"Char": "即",
+"jyutping": "zik1",
+"vocab": [
+{
+"word": "即使",
+"jyutping": ""
+},
+{
+"word": "立即",
+"jyutping": ""
+},
+{
+"word": "即將",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 264,
+"Char": "保",
+"jyutping": "bou2",
+"vocab": [
+{
+"word": "保護",
+"jyutping": ""
+},
+{
+"word": "保持",
+"jyutping": ""
+},
+{
+"word": "保證",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 265,
+"Char": "治",
+"jyutping": "zi6",
+"vocab": [
+{
+"word": "治理",
+"jyutping": ""
+},
+{
+"word": "政治",
+"jyutping": ""
+},
+{
+"word": "治療",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 266,
+"Char": "北",
+"jyutping": "bak1",
+"vocab": [
+{
+"word": "北部",
+"jyutping": ""
+},
+{
+"word": "北京",
+"jyutping": ""
+},
+{
+"word": "東北",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 267,
+"Char": "造",
+"jyutping": "zou6",
+"vocab": [
+{
+"word": "製造",
+"jyutping": ""
+},
+{
+"word": "創造",
+"jyutping": ""
+},
+{
+"word": "造福",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 268,
+"Char": "百",
+"jyutping": "baak3",
+"vocab": [
+{
+"word": "百分",
+"jyutping": ""
+},
+{
+"word": "百姓",
+"jyutping": ""
+},
+{
+"word": "一百",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 269,
+"Char": "規",
+"jyutping": "kwai1",
+"vocab": [
+{
+"word": "規定",
+"jyutping": ""
+},
+{
+"word": "規則",
+"jyutping": ""
+},
+{
+"word": "規模",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 270,
+"Char": "熱",
+"jyutping": "jit6",
+"vocab": [
+{
+"word": "熱門",
+"jyutping": ""
+},
+{
+"word": "熱情",
+"jyutping": ""
+},
+{
+"word": "熱心",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 271,
+"Char": "領",
+"jyutping": "ling5",
+"vocab": [
+{
+"word": "領導",
+"jyutping": ""
+},
+{
+"word": "領域",
+"jyutping": ""
+},
+{
+"word": "領先",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 272,
+"Char": "七",
+"jyutping": "cat1",
+"vocab": [
+{
+"word": "七月",
+"jyutping": ""
+},
+{
+"word": "七次",
+"jyutping": ""
+},
+{
+"word": "第七",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 273,
+"Char": "海",
+"jyutping": "hoi2",
+"vocab": [
+{
+"word": "海洋",
+"jyutping": ""
+},
+{
+"word": "海邊",
+"jyutping": ""
+},
+{
+"word": "上海",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 274,
+"Char": "口",
+"jyutping": "hau2",
+"vocab": [
+{
+"word": "口頭",
+"jyutping": ""
+},
+{
+"word": "口語",
+"jyutping": ""
+},
+{
+"word": "口號",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 275,
+"Char": "東",
+"jyutping": "dung1",
+"vocab": [
+{
+"word": "東西",
+"jyutping": ""
+},
+{
+"word": "東部",
+"jyutping": ""
+},
+{
+"word": "東方",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 276,
+"Char": "導",
+"jyutping": "dou6",
+"vocab": [
+{
+"word": "導師",
+"jyutping": ""
+},
+{
+"word": "指導",
+"jyutping": ""
+},
+{
+"word": "導致",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 277,
+"Char": "器",
+"jyutping": "hei3",
+"vocab": [
+{
+"word": "器官",
+"jyutping": ""
+},
+{
+"word": "機器",
+"jyutping": ""
+},
+{
+"word": "儀器",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 278,
+"Char": "壓",
+"jyutping": "aat3",
+"vocab": [
+{
+"word": "壓力",
+"jyutping": ""
+},
+{
+"word": "壓迫",
+"jyutping": ""
+},
+{
+"word": "鎮壓",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 279,
+"Char": "世",
+"jyutping": "sai3",
+"vocab": [
+{
+"word": "世界",
+"jyutping": ""
+},
+{
+"word": "世紀",
+"jyutping": ""
+},
+{
+"word": "世貿",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 280,
+"Char": "金",
+"jyutping": "gam1",
+"vocab": [
+{
+"word": "金融",
+"jyutping": ""
+},
+{
+"word": "黃金",
+"jyutping": ""
+},
+{
+"word": "現金",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 281,
+"Char": "增",
+"jyutping": "zang1",
+"vocab": [
+{
+"word": "增加",
+"jyutping": ""
+},
+{
+"word": "增長",
+"jyutping": ""
+},
+{
+"word": "增強",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 282,
+"Char": "爭",
+"jyutping": "zang1",
+"vocab": [
+{
+"word": "競爭",
+"jyutping": ""
+},
+{
+"word": "爭取",
+"jyutping": ""
+},
+{
+"word": "爭議",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 283,
+"Char": "階",
+"jyutping": "gaai1",
+"vocab": [
+{
+"word": "階段",
+"jyutping": ""
+},
+{
+"word": "階級",
+"jyutping": ""
+},
+{
+"word": "台階",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 284,
+"Char": "油",
+"jyutping": "jau4",
+"vocab": [
+{
+"word": "石油",
+"jyutping": ""
+},
+{
+"word": "油田",
+"jyutping": ""
+},
+{
+"word": "加油",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 285,
+"Char": "思",
+"jyutping": "si1",
+"vocab": [
+{
+"word": "思想",
+"jyutping": ""
+},
+{
+"word": "思考",
+"jyutping": ""
+},
+{
+"word": "思維",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 286,
+"Char": "術",
+"jyutping": "seot6",
+"vocab": [
+{
+"word": "技術",
+"jyutping": ""
+},
+{
+"word": "藝術",
+"jyutping": ""
+},
+{
+"word": "學術",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 287,
+"Char": "極",
+"jyutping": "gik6",
+"vocab": [
+{
+"word": "極度",
+"jyutping": ""
+},
+{
+"word": "極為",
+"jyutping": ""
+},
+{
+"word": "積極",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 288,
+"Char": "交",
+"jyutping": "gaau1",
+"vocab": [
+{
+"word": "交流",
+"jyutping": ""
+},
+{
+"word": "交通",
+"jyutping": ""
+},
+{
+"word": "交易",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 289,
+"Char": "受",
+"jyutping": "sau6",
+"vocab": [
+{
+"word": "接受",
+"jyutping": ""
+},
+{
+"word": "受到",
+"jyutping": ""
+},
+{
+"word": "感受",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 290,
+"Char": "幹",
+"jyutping": "gon3",
+"vocab": [
+{
+"word": "幹部",
+"jyutping": ""
+},
+{
+"word": "樹幹",
+"jyutping": ""
+},
+{
+"word": "幹練",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 291,
+"Char": "聯",
+"jyutping": "lyun4",
+"vocab": [
+{
+"word": "聯繫",
+"jyutping": ""
+},
+{
+"word": "聯合",
+"jyutping": ""
+},
+{
+"word": "聯盟",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 292,
+"Char": "認",
+"jyutping": "jing6",
+"vocab": [
+{
+"word": "認為",
+"jyutping": ""
+},
+{
+"word": "認真",
+"jyutping": ""
+},
+{
+"word": "認識",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 293,
+"Char": "六",
+"jyutping": "luk6",
+"vocab": [
+{
+"word": "六月",
+"jyutping": ""
+},
+{
+"word": "六次",
+"jyutping": ""
+},
+{
+"word": "第六",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 294,
+"Char": "共",
+"jyutping": "gung6",
+"vocab": [
+{
+"word": "共同",
+"jyutping": ""
+},
+{
+"word": "一共",
+"jyutping": ""
+},
+{
+"word": "共和",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 295,
+"Char": "權",
+"jyutping": "keun4",
+"vocab": [
+{
+"word": "權力",
+"jyutping": ""
+},
+{
+"word": "權利",
+"jyutping": ""
+},
+{
+"word": "版權",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 296,
+"Char": "收",
+"jyutping": "sau1",
+"vocab": [
+{
+"word": "收入",
+"jyutping": ""
+},
+{
+"word": "收集",
+"jyutping": ""
+},
+{
+"word": "收穫",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 297,
+"Char": "證",
+"jyutping": "zing3",
+"vocab": [
+{
+"word": "證明",
+"jyutping": ""
+},
+{
+"word": "證件",
+"jyutping": ""
+},
+{
+"word": "簽證",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 298,
+"Char": "改",
+"jyutping": "goi2",
+"vocab": [
+{
+"word": "改變",
+"jyutping": ""
+},
+{
+"word": "改革",
+"jyutping": ""
+},
+{
+"word": "改正",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 299,
+"Char": "清",
+"jyutping": "cing1",
+"vocab": [
+{
+"word": "清楚",
+"jyutping": ""
+},
+{
+"word": "清潔",
+"jyutping": ""
+},
+{
+"word": "清理",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 300,
+"Char": "志",
+"jyutping": "zi3",
+"vocab": [
+{
+"word": "同志",
+"jyutping": ""
+},
+{
+"word": "志願",
+"jyutping": ""
+},
+{
+"word": "意志",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 301,
+"Char": "己",
+"jyutping": "gei2",
+"vocab": [
+{
+"word": "自己",
+"jyutping": ""
+},
+{
+"word": "已經",
+"jyutping": ""
+},
+{
+"word": "克己",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 302,
+"Char": "美",
+"jyutping": "mei5",
+"vocab": [
+{
+"word": "美麗",
+"jyutping": ""
+},
+{
+"word": "美國",
+"jyutping": ""
+},
+{
+"word": "美術",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 303,
+"Char": "再",
+"jyutping": "zoi3",
+"vocab": [
+{
+"word": "再次",
+"jyutping": ""
+},
+{
+"word": "再見",
+"jyutping": ""
+},
+{
+"word": "再三",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 304,
+"Char": "轉",
+"jyutping": "zyun2",
+"vocab": [
+{
+"word": "轉變",
+"jyutping": ""
+},
+{
+"word": "轉移",
+"jyutping": ""
+},
+{
+"word": "轉身",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 305,
+"Char": "更",
+"jyutping": "gang3",
+"vocab": [
+{
+"word": "更多",
+"jyutping": ""
+},
+{
+"word": "更新",
+"jyutping": ""
+},
+{
+"word": "更換",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 306,
+"Char": "單",
+"jyutping": "daan1",
+"vocab": [
+{
+"word": "單純",
+"jyutping": ""
+},
+{
+"word": "單位",
+"jyutping": ""
+},
+{
+"word": "單個",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 307,
+"Char": "風",
+"jyutping": "fung1",
+"vocab": [
+{
+"word": "風格",
+"jyutping": ""
+},
+{
+"word": "風俗",
+"jyutping": ""
+},
+{
+"word": "風力",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 308,
+"Char": "切",
+"jyutping": "cit3",
+"vocab": [
+{
+"word": "一切",
+"jyutping": ""
+},
+{
+"word": "切實",
+"jyutping": ""
+},
+{
+"word": "切割",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 309,
+"Char": "打",
+"jyutping": "daa2",
+"vocab": [
+{
+"word": "打破",
+"jyutping": ""
+},
+{
+"word": "打擊",
+"jyutping": ""
+},
+{
+"word": "打敗",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 310,
+"Char": "白",
+"jyutping": "baak6",
+"vocab": [
+{
+"word": "白色",
+"jyutping": ""
+},
+{
+"word": "明白",
+"jyutping": ""
+},
+{
+"word": "空白",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 311,
+"Char": "教",
+"jyutping": "gaau3",
+"vocab": [
+{
+"word": "教育",
+"jyutping": ""
+},
+{
+"word": "教學",
+"jyutping": ""
+},
+{
+"word": "教師",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 312,
+"Char": "速",
+"jyutping": "cuk1",
+"vocab": [
+{
+"word": "速度",
+"jyutping": ""
+},
+{
+"word": "高速",
+"jyutping": ""
+},
+{
+"word": "速食",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 313,
+"Char": "花",
+"jyutping": "faa1",
+"vocab": [
+{
+"word": "花園",
+"jyutping": ""
+},
+{
+"word": "花費",
+"jyutping": ""
+},
+{
+"word": "花朵",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 314,
+"Char": "帶",
+"jyutping": "daai3",
+"vocab": [
+{
+"word": "帶來",
+"jyutping": ""
+},
+{
+"word": "帶領",
+"jyutping": ""
+},
+{
+"word": "皮帶",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 315,
+"Char": "安",
+"jyutping": "on1",
+"vocab": [
+{
+"word": "安全",
+"jyutping": ""
+},
+{
+"word": "安排",
+"jyutping": ""
+},
+{
+"word": "安定",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 316,
+"Char": "場",
+"jyutping": "coeng4",
+"vocab": [
+{
+"word": "場所",
+"jyutping": ""
+},
+{
+"word": "市場",
+"jyutping": ""
+},
+{
+"word": "會場",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 317,
+"Char": "身",
+"jyutping": "san1",
+"vocab": [
+{
+"word": "身體",
+"jyutping": ""
+},
+{
+"word": "身邊",
+"jyutping": ""
+},
+{
+"word": "自身",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 318,
+"Char": "車",
+"jyutping": "ce1",
+"vocab": [
+{
+"word": "汽車",
+"jyutping": ""
+},
+{
+"word": "火車",
+"jyutping": ""
+},
+{
+"word": "車輛",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 319,
+"Char": "例",
+"jyutping": "lai6",
+"vocab": [
+{
+"word": "例如",
+"jyutping": ""
+},
+{
+"word": "例子",
+"jyutping": ""
+},
+{
+"word": "例外",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 320,
+"Char": "真",
+"jyutping": "zan1",
+"vocab": [
+{
+"word": "真正",
+"jyutping": ""
+},
+{
+"word": "真實",
+"jyutping": ""
+},
+{
+"word": "認真",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 321,
+"Char": "務",
+"jyutping": "mou6",
+"vocab": [
+{
+"word": "服務",
+"jyutping": ""
+},
+{
+"word": "任務",
+"jyutping": ""
+},
+{
+"word": "公務",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 322,
+"Char": "具",
+"jyutping": "geoi6",
+"vocab": [
+{
+"word": "具有",
+"jyutping": ""
+},
+{
+"word": "工具",
+"jyutping": ""
+},
+{
+"word": "玩具",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 323,
+"Char": "萬",
+"jyutping": "maan6",
+"vocab": [
+{
+"word": "萬一",
+"jyutping": ""
+},
+{
+"word": "萬歲",
+"jyutping": ""
+},
+{
+"word": "萬事",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 324,
+"Char": "每",
+"jyutping": "mui5",
+"vocab": [
+{
+"word": "每個",
+"jyutping": ""
+},
+{
+"word": "每天",
+"jyutping": ""
+},
+{
+"word": "每年",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 325,
+"Char": "目",
+"jyutping": "muk6",
+"vocab": [
+{
+"word": "目標",
+"jyutping": ""
+},
+{
+"word": "目前",
+"jyutping": ""
+},
+{
+"word": "目錄",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 326,
+"Char": "至",
+"jyutping": "zi3",
+"vocab": [
+{
+"word": "至於",
+"jyutping": ""
+},
+{
+"word": "甚至",
+"jyutping": ""
+},
+{
+"word": "達到",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 327,
+"Char": "達",
+"jyutping": "daat6",
+"vocab": [
+{
+"word": "達到",
+"jyutping": ""
+},
+{
+"word": "表達",
+"jyutping": ""
+},
+{
+"word": "發達",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 328,
+"Char": "走",
+"jyutping": "zau2",
+"vocab": [
+{
+"word": "走進",
+"jyutping": ""
+},
+{
+"word": "走開",
+"jyutping": ""
+},
+{
+"word": "走過",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 329,
+"Char": "積",
+"jyutping": "zik1",
+"vocab": [
+{
+"word": "積極",
+"jyutping": ""
+},
+{
+"word": "積累",
+"jyutping": ""
+},
+{
+"word": "面積",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 330,
+"Char": "示",
+"jyutping": "si6",
+"vocab": [
+{
+"word": "表示",
+"jyutping": ""
+},
+{
+"word": "指示",
+"jyutping": ""
+},
+{
+"word": "示範",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 331,
+"Char": "議",
+"jyutping": "ji5",
+"vocab": [
+{
+"word": "會議",
+"jyutping": ""
+},
+{
+"word": "建議",
+"jyutping": ""
+},
+{
+"word": "議會",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 332,
+"Char": "聲",
+"jyutping": "sing1",
+"vocab": [
+{
+"word": "聲音",
+"jyutping": ""
+},
+{
+"word": "聲明",
+"jyutping": ""
+},
+{
+"word": "聲望",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 333,
+"Char": "報",
+"jyutping": "bou3",
+"vocab": [
+{
+"word": "報告",
+"jyutping": ""
+},
+{
+"word": "報紙",
+"jyutping": ""
+},
+{
+"word": "報名",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 334,
+"Char": "鬥",
+"jyutping": "dau3",
+"vocab": [
+{
+"word": "鬥爭",
+"jyutping": ""
+},
+{
+"word": "戰鬥",
+"jyutping": ""
+},
+{
+"word": "格鬥",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 335,
+"Char": "完",
+"jyutping": "jyun4",
+"vocab": [
+{
+"word": "完成",
+"jyutping": ""
+},
+{
+"word": "完畢",
+"jyutping": ""
+},
+{
+"word": "完善",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 336,
+"Char": "類",
+"jyutping": "leoi6",
+"vocab": [
+{
+"word": "類型",
+"jyutping": ""
+},
+{
+"word": "人類",
+"jyutping": ""
+},
+{
+"word": "分類",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 337,
+"Char": "八",
+"jyutping": "baat3",
+"vocab": [
+{
+"word": "八月",
+"jyutping": ""
+},
+{
+"word": "八次",
+"jyutping": ""
+},
+{
+"word": "八個",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 338,
+"Char": "離",
+"jyutping": "lei4",
+"vocab": [
+{
+"word": "離開",
+"jyutping": ""
+},
+{
+"word": "距離",
+"jyutping": ""
+},
+{
+"word": "分離",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 339,
+"Char": "華",
+"jyutping": "waa4",
+"vocab": [
+{
+"word": "中華",
+"jyutping": ""
+},
+{
+"word": "華人",
+"jyutping": ""
+},
+{
+"word": "華麗",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 340,
+"Char": "名",
+"jyutping": "ming4",
+"vocab": [
+{
+"word": "名稱",
+"jyutping": ""
+},
+{
+"word": "名字",
+"jyutping": ""
+},
+{
+"word": "名單",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 341,
+"Char": "確",
+"jyutping": "kok3",
+"vocab": [
+{
+"word": "確定",
+"jyutping": ""
+},
+{
+"word": "正確",
+"jyutping": ""
+},
+{
+"word": "的確",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 342,
+"Char": "科",
+"jyutping": "fo1",
+"vocab": [
+{
+"word": "科學",
+"jyutping": ""
+},
+{
+"word": "科技",
+"jyutping": ""
+},
+{
+"word": "科目",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 343,
+"Char": "傳",
+"jyutping": "cyun4",
+"vocab": [
+{
+"word": "傳播",
+"jyutping": ""
+},
+{
+"word": "傳統",
+"jyutping": ""
+},
+{
+"word": "傳說",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 344,
+"Char": "張",
+"jyutping": "zoeng1",
+"vocab": [
+{
+"word": "緊張",
+"jyutping": ""
+},
+{
+"word": "張開",
+"jyutping": ""
+},
+{
+"word": "張貼",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 345,
+"Char": "才",
+"jyutping": "coi4",
+"vocab": [
+{
+"word": "才能",
+"jyutping": ""
+},
+{
+"word": "天才",
+"jyutping": ""
+},
+{
+"word": "剛才",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 346,
+"Char": "信",
+"jyutping": "seon3",
+"vocab": [
+{
+"word": "相信",
+"jyutping": ""
+},
+{
+"word": "信息",
+"jyutping": ""
+},
+{
+"word": "信任",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 347,
+"Char": "馬",
+"jyutping": "maa5",
+"vocab": [
+{
+"word": "馬路",
+"jyutping": ""
+},
+{
+"word": "馬匹",
+"jyutping": ""
+},
+{
+"word": "馬上",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 348,
+"Char": "節",
+"jyutping": "zit3",
+"vocab": [
+{
+"word": "節目",
+"jyutping": ""
+},
+{
+"word": "節日",
+"jyutping": ""
+},
+{
+"word": "節省",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 349,
+"Char": "話",
+"jyutping": "waa6",
+"vocab": [
+{
+"word": "說話",
+"jyutping": ""
+},
+{
+"word": "電話",
+"jyutping": ""
+},
+{
+"word": "話題",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 350,
+"Char": "米",
+"jyutping": "mai5",
+"vocab": [
+{
+"word": "米飯",
+"jyutping": ""
+},
+{
+"word": "厘米",
+"jyutping": ""
+},
+{
+"word": "大米",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 351,
+"Char": "採",
+"jyutping": "coi2",
+"vocab": [
+{
+"word": "採取",
+"jyutping": ""
+},
+{
+"word": "採訪",
+"jyutping": ""
+},
+{
+"word": "採購",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 352,
+"Char": "整",
+"jyutping": "zing2",
+"vocab": [
+{
+"word": "整個",
+"jyutping": ""
+},
+{
+"word": "整理",
+"jyutping": ""
+},
+{
+"word": "整潔",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 353,
+"Char": "空",
+"jyutping": "hung1",
+"vocab": [
+{
+"word": "空間",
+"jyutping": ""
+},
+{
+"word": "空氣",
+"jyutping": ""
+},
+{
+"word": "空虛",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 354,
+"Char": "元",
+"jyutping": "jyun4",
+"vocab": [
+{
+"word": "元旦",
+"jyutping": ""
+},
+{
+"word": "萬元",
+"jyutping": ""
+},
+{
+"word": "元首",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 355,
+"Char": "況",
+"jyutping": "fong3",
+"vocab": [
+{
+"word": "情況",
+"jyutping": ""
+},
+{
+"word": "狀況",
+"jyutping": ""
+},
+{
+"word": "實況",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 356,
+"Char": "今",
+"jyutping": "gam1",
+"vocab": [
+{
+"word": "今天",
+"jyutping": ""
+},
+{
+"word": "今後",
+"jyutping": ""
+},
+{
+"word": "古今",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 357,
+"Char": "集",
+"jyutping": "zaap6",
+"vocab": [
+{
+"word": "集中",
+"jyutping": ""
+},
+{
+"word": "收集",
+"jyutping": ""
+},
+{
+"word": "集團",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 358,
+"Char": "溫",
+"jyutping": "wan1",
+"vocab": [
+{
+"word": "溫暖",
+"jyutping": ""
+},
+{
+"word": "溫度",
+"jyutping": ""
+},
+{
+"word": "溫習",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 359,
+"Char": "土",
+"jyutping": "tou2",
+"vocab": [
+{
+"word": "土地",
+"jyutping": ""
+},
+{
+"word": "土壤",
+"jyutping": ""
+},
+{
+"word": "國土",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 360,
+"Char": "許",
+"jyutping": "heoi2",
+"vocab": [
+{
+"word": "也許",
+"jyutping": ""
+},
+{
+"word": "許多",
+"jyutping": ""
+},
+{
+"word": "允許",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 361,
+"Char": "步",
+"jyutping": "bou6",
+"vocab": [
+{
+"word": "步伐",
+"jyutping": ""
+},
+{
+"word": "進步",
+"jyutping": ""
+},
+{
+"word": "步行",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 362,
+"Char": "群",
+"jyutping": "kwan4",
+"vocab": [
+{
+"word": "群眾",
+"jyutping": ""
+},
+{
+"word": "群體",
+"jyutping": ""
+},
+{
+"word": "人群",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 363,
+"Char": "石",
+"jyutping": "sek6",
+"vocab": [
+{
+"word": "石頭",
+"jyutping": ""
+},
+{
+"word": "石油",
+"jyutping": ""
+},
+{
+"word": "石化",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 364,
+"Char": "廣",
+"jyutping": "gwong2",
+"vocab": [
+{
+"word": "廣場",
+"jyutping": ""
+},
+{
+"word": "廣泛",
+"jyutping": ""
+},
+{
+"word": "廣告",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 365,
+"Char": "且",
+"jyutping": "ce2",
+"vocab": [
+{
+"word": "而且",
+"jyutping": ""
+},
+{
+"word": "並且",
+"jyutping": ""
+},
+{
+"word": "暫且",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 366,
+"Char": "記",
+"jyutping": "gei3",
+"vocab": [
+{
+"word": "記錄",
+"jyutping": ""
+},
+{
+"word": "記得",
+"jyutping": ""
+},
+{
+"word": "紀念",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 367,
+"Char": "需",
+"jyutping": "seoi1",
+"vocab": [
+{
+"word": "需要",
+"jyutping": ""
+},
+{
+"word": "需求",
+"jyutping": ""
+},
+{
+"word": "必需",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 368,
+"Char": "段",
+"jyutping": "dyun6",
+"vocab": [
+{
+"word": "階段",
+"jyutping": ""
+},
+{
+"word": "段落",
+"jyutping": ""
+},
+{
+"word": "片段",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 369,
+"Char": "研",
+"jyutping": "jin4",
+"vocab": [
+{
+"word": "研究",
+"jyutping": ""
+},
+{
+"word": "研討",
+"jyutping": ""
+},
+{
+"word": "研發",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 370,
+"Char": "界",
+"jyutping": "gaai3",
+"vocab": [
+{
+"word": "世界",
+"jyutping": ""
+},
+{
+"word": "業界",
+"jyutping": ""
+},
+{
+"word": "邊界",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 371,
+"Char": "拉",
+"jyutping": "laai1",
+"vocab": [
+{
+"word": "拉動",
+"jyutping": ""
+},
+{
+"word": "拉力",
+"jyutping": ""
+},
+{
+"word": "拉長",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 372,
+"Char": "林",
+"jyutping": "lam4",
+"vocab": [
+{
+"word": "森林",
+"jyutping": ""
+},
+{
+"word": "林木",
+"jyutping": ""
+},
+{
+"word": "樹林",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 373,
+"Char": "律",
+"jyutping": "leot6",
+"vocab": [
+{
+"word": "法律",
+"jyutping": ""
+},
+{
+"word": "紀律",
+"jyutping": ""
+},
+{
+"word": "律師",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 374,
+"Char": "叫",
+"jyutping": "giu3",
+"vocab": [
+{
+"word": "叫做",
+"jyutping": ""
+},
+{
+"word": "叫喊",
+"jyutping": ""
+},
+{
+"word": "叫醒",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 375,
+"Char": "究",
+"jyutping": "gau3",
+"vocab": [
+{
+"word": "研究",
+"jyutping": ""
+},
+{
+"word": "究竟",
+"jyutping": ""
+},
+{
+"word": "探究",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 376,
+"Char": "觀",
+"jyutping": "gun1",
+"vocab": [
+{
+"word": "觀察",
+"jyutping": ""
+},
+{
+"word": "觀點",
+"jyutping": ""
+},
+{
+"word": "觀眾",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 377,
+"Char": "越",
+"jyutping": "jyut6",
+"vocab": [
+{
+"word": "越過",
+"jyutping": ""
+},
+{
+"word": "越南",
+"jyutping": ""
+},
+{
+"word": "超越",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 378,
+"Char": "織",
+"jyutping": "zik1",
+"vocab": [
+{
+"word": "組織",
+"jyutping": ""
+},
+{
+"word": "編織",
+"jyutping": ""
+},
+{
+"word": "紡織",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 379,
+"Char": "裝",
+"jyutping": "zong1",
+"vocab": [
+{
+"word": "裝修",
+"jyutping": ""
+},
+{
+"word": "裝備",
+"jyutping": ""
+},
+{
+"word": "裝置",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 380,
+"Char": "影",
+"jyutping": "jing2",
+"vocab": [
+{
+"word": "影響",
+"jyutping": ""
+},
+{
+"word": "影子",
+"jyutping": ""
+},
+{
+"word": "電影",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 381,
+"Char": "算",
+"jyutping": "syun3",
+"vocab": [
+{
+"word": "計算",
+"jyutping": ""
+},
+{
+"word": "算了",
+"jyutping": ""
+},
+{
+"word": "算數",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 382,
+"Char": "低",
+"jyutping": "dai1",
+"vocab": [
+{
+"word": "降低",
+"jyutping": ""
+},
+{
+"word": "低頭",
+"jyutping": ""
+},
+{
+"word": "低級",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 383,
+"Char": "持",
+"jyutping": "ci4",
+"vocab": [
+{
+"word": "堅持",
+"jyutping": ""
+},
+{
+"word": "保持",
+"jyutping": ""
+},
+{
+"word": "支持",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 384,
+"Char": "音",
+"jyutping": "jam1",
+"vocab": [
+{
+"word": "音樂",
+"jyutping": ""
+},
+{
+"word": "聲音",
+"jyutping": ""
+},
+{
+"word": "音頻",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 385,
+"Char": "眾",
+"jyutping": "zung3",
+"vocab": [
+{
+"word": "群眾",
+"jyutping": ""
+},
+{
+"word": "觀眾",
+"jyutping": ""
+},
+{
+"word": "眾多",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 386,
+"Char": "系",
+"jyutping": "hai6",
+"vocab": [
+{
+"word": "系統",
+"jyutping": ""
+},
+{
+"word": "關係",
+"jyutping": ""
+},
+{
+"word": "系列",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 387,
+"Char": "書",
+"jyutping": "syu1",
+"vocab": [
+{
+"word": "書本",
+"jyutping": ""
+},
+{
+"word": "書籍",
+"jyutping": ""
+},
+{
+"word": "書寫",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 388,
+"Char": "容",
+"jyutping": "jung4",
+"vocab": [
+{
+"word": "容易",
+"jyutping": ""
+},
+{
+"word": "內容",
+"jyutping": ""
+},
+{
+"word": "包容",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 389,
+"Char": "兒",
+"jyutping": "ji4",
+"vocab": [
+{
+"word": "兒童",
+"jyutping": ""
+},
+{
+"word": "兒子",
+"jyutping": ""
+},
+{
+"word": "兒科",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 390,
+"Char": "際",
+"jyutping": "zai3",
+"vocab": [
+{
+"word": "實際",
+"jyutping": ""
+},
+{
+"word": "國際",
+"jyutping": ""
+},
+{
+"word": "交際",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 391,
+"Char": "商",
+"jyutping": "soeng1",
+"vocab": [
+{
+"word": "商業",
+"jyutping": ""
+},
+{
+"word": "商品",
+"jyutping": ""
+},
+{
+"word": "協商",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 392,
+"Char": "非",
+"jyutping": "fei1",
+"vocab": [
+{
+"word": "非常",
+"jyutping": ""
+},
+{
+"word": "非法",
+"jyutping": ""
+},
+{
+"word": "非洲",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 393,
+"Char": "驗",
+"jyutping": "jim6",
+"vocab": [
+{
+"word": "經驗",
+"jyutping": ""
+},
+{
+"word": "驗證",
+"jyutping": ""
+},
+{
+"word": "實驗",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 394,
+"Char": "連",
+"jyutping": "lin4",
+"vocab": [
+{
+"word": "連接",
+"jyutping": ""
+},
+{
+"word": "連續",
+"jyutping": ""
+},
+{
+"word": "連鎖",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 395,
+"Char": "斷",
+"jyutping": "dyun6",
+"vocab": [
+{
+"word": "判斷",
+"jyutping": ""
+},
+{
+"word": "斷絕",
+"jyutping": ""
+},
+{
+"word": "不斷",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 396,
+"Char": "率",
+"jyutping": "leot6",
+"vocab": [
+{
+"word": "效率",
+"jyutping": ""
+},
+{
+"word": "比率",
+"jyutping": ""
+},
+{
+"word": "率先",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 397,
+"Char": "深",
+"jyutping": "sam1",
+"vocab": [
+{
+"word": "深入",
+"jyutping": ""
+},
+{
+"word": "深刻",
+"jyutping": ""
+},
+{
+"word": "深情",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 398,
+"Char": "難",
+"jyutping": "naan4",
+"vocab": [
+{
+"word": "困難",
+"jyutping": ""
+},
+{
+"word": "難道",
+"jyutping": ""
+},
+{
+"word": "難以",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 399,
+"Char": "近",
+"jyutping": "gan6",
+"vocab": [
+{
+"word": "最近",
+"jyutping": ""
+},
+{
+"word": "附近",
+"jyutping": ""
+},
+{
+"word": "靠近",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 400,
+"Char": "須",
+"jyutping": "seoi1",
+"vocab": [
+{
+"word": "必須",
+"jyutping": ""
+},
+{
+"word": "須知",
+"jyutping": ""
+},
+{
+"word": "無須",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 401,
+"Char": "礦",
+"jyutping": "kwong3",
+"vocab": [
+{
+"word": "礦產",
+"jyutping": ""
+},
+{
+"word": "礦物",
+"jyutping": ""
+},
+{
+"word": "礦石",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 402,
+"Char": "千",
+"jyutping": "cin1",
+"vocab": [
+{
+"word": "千克",
+"jyutping": ""
+},
+{
+"word": "千萬",
+"jyutping": ""
+},
+{
+"word": "千米",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 403,
+"Char": "省",
+"jyutping": "sing2",
+"vocab": [
+{
+"word": "省份",
+"jyutping": ""
+},
+{
+"word": "節省",
+"jyutping": ""
+},
+{
+"word": "省級",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 404,
+"Char": "委",
+"jyutping": "wai2",
+"vocab": [
+{
+"word": "委員會",
+"jyutping": ""
+},
+{
+"word": "委託",
+"jyutping": ""
+},
+{
+"word": "委任",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 405,
+"Char": "素",
+"jyutping": "sou3",
+"vocab": [
+{
+"word": "素質",
+"jyutping": ""
+},
+{
+"word": "元素",
+"jyutping": ""
+},
+{
+"word": "因素",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 406,
+"Char": "技",
+"jyutping": "gei6",
+"vocab": [
+{
+"word": "技術",
+"jyutping": ""
+},
+{
+"word": "科技",
+"jyutping": ""
+},
+{
+"word": "技能",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 407,
+"Char": "備",
+"jyutping": "bei6",
+"vocab": [
+{
+"word": "準備",
+"jyutping": ""
+},
+{
+"word": "設備",
+"jyutping": ""
+},
+{
+"word": "備用",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 408,
+"Char": "半",
+"jyutping": "bun3",
+"vocab": [
+{
+"word": "一半",
+"jyutping": ""
+},
+{
+"word": "半數",
+"jyutping": ""
+},
+{
+"word": "半徑",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 409,
+"Char": "辦",
+"jyutping": "baan6",
+"vocab": [
+{
+"word": "辦公",
+"jyutping": ""
+},
+{
+"word": "辦理",
+"jyutping": ""
+},
+{
+"word": "舉辦",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 410,
+"Char": "青",
+"jyutping": "cing1",
+"vocab": [
+{
+"word": "青年",
+"jyutping": ""
+},
+{
+"word": "青春",
+"jyutping": ""
+},
+{
+"word": "青菜",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 411,
+"Char": "列",
+"jyutping": "lit6",
+"vocab": [
+{
+"word": "列表",
+"jyutping": ""
+},
+{
+"word": "系列",
+"jyutping": ""
+},
+{
+"word": "排列",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 412,
+"Char": "習",
+"jyutping": "zaap6",
+"vocab": [
+{
+"word": "學習",
+"jyutping": ""
+},
+{
+"word": "習慣",
+"jyutping": ""
+},
+{
+"word": "練習",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 413,
+"Char": "便",
+"jyutping": "bin6",
+"vocab": [
+{
+"word": "方便",
+"jyutping": ""
+},
+{
+"word": "便於",
+"jyutping": ""
+},
+{
+"word": "便宜",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 414,
+"Char": "響",
+"jyutping": "hoeng2",
+"vocab": [
+{
+"word": "影響",
+"jyutping": ""
+},
+{
+"word": "響亮",
+"jyutping": ""
+},
+{
+"word": "響應",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 415,
+"Char": "約",
+"jyutping": "joek3",
+"vocab": [
+{
+"word": "約會",
+"jyutping": ""
+},
+{
+"word": "約定",
+"jyutping": ""
+},
+{
+"word": "約束",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 416,
+"Char": "支",
+"jyutping": "zi1",
+"vocab": [
+{
+"word": "支持",
+"jyutping": ""
+},
+{
+"word": "支部",
+"jyutping": ""
+},
+{
+"word": "支出",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 417,
+"Char": "般",
+"jyutping": "bun1",
+"vocab": [
+{
+"word": "一般",
+"jyutping": ""
+},
+{
+"word": "般若",
+"jyutping": ""
+},
+{
+"word": "種類",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 418,
+"Char": "史",
+"jyutping": "si2",
+"vocab": [
+{
+"word": "歷史",
+"jyutping": ""
+},
+{
+"word": "史詩",
+"jyutping": ""
+},
+{
+"word": "史前",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 419,
+"Char": "感",
+"jyutping": "gam2",
+"vocab": [
+{
+"word": "感覺",
+"jyutping": ""
+},
+{
+"word": "感情",
+"jyutping": ""
+},
+{
+"word": "感謝",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 420,
+"Char": "勞",
+"jyutping": "lou4",
+"vocab": [
+{
+"word": "勞動",
+"jyutping": ""
+},
+{
+"word": "勞力",
+"jyutping": ""
+},
+{
+"word": "疲勞",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 421,
+"Char": "團",
+"jyutping": "tyun4",
+"vocab": [
+{
+"word": "團體",
+"jyutping": ""
+},
+{
+"word": "集團",
+"jyutping": ""
+},
+{
+"word": "團結",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 422,
+"Char": "往",
+"jyutping": "wong5",
+"vocab": [
+{
+"word": "前往",
+"jyutping": ""
+},
+{
+"word": "往來",
+"jyutping": ""
+},
+{
+"word": "來往",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 423,
+"Char": "酸",
+"jyutping": "syun1",
+"vocab": [
+{
+"word": "酸性",
+"jyutping": ""
+},
+{
+"word": "酸痛",
+"jyutping": ""
+},
+{
+"word": "硫酸",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 424,
+"Char": "稱",
+"jyutping": "cing1",
+"vocab": [
+{
+"word": "稱呼",
+"jyutping": ""
+},
+{
+"word": "稱讚",
+"jyutping": ""
+},
+{
+"word": "名稱",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 425,
+"Char": "市",
+"jyutping": "si5",
+"vocab": [
+{
+"word": "市場",
+"jyutping": ""
+},
+{
+"word": "城市",
+"jyutping": ""
+},
+{
+"word": "市區",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 426,
+"Char": "克",
+"jyutping": "hak1",
+"vocab": [
+{
+"word": "克服",
+"jyutping": ""
+},
+{
+"word": "克制",
+"jyutping": ""
+},
+{
+"word": "千克",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 427,
+"Char": "何",
+"jyutping": "ho4",
+"vocab": [
+{
+"word": "為何",
+"jyutping": ""
+},
+{
+"word": "何時",
+"jyutping": ""
+},
+{
+"word": "如何",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 428,
+"Char": "除",
+"jyutping": "ceoi4",
+"vocab": [
+{
+"word": "除了",
+"jyutping": ""
+},
+{
+"word": "消除",
+"jyutping": ""
+},
+{
+"word": "清除",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 429,
+"Char": "消",
+"jyutping": "siu1",
+"vocab": [
+{
+"word": "消息",
+"jyutping": ""
+},
+{
+"word": "消失",
+"jyutping": ""
+},
+{
+"word": "消費",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 430,
+"Char": "構",
+"jyutping": "gau3",
+"vocab": [
+{
+"word": "結構",
+"jyutping": ""
+},
+{
+"word": "構成",
+"jyutping": ""
+},
+{
+"word": "機構",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 431,
+"Char": "府",
+"jyutping": "fu2",
+"vocab": [
+{
+"word": "政府",
+"jyutping": ""
+},
+{
+"word": "縣府",
+"jyutping": ""
+},
+{
+"word": "府邸",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 432,
+"Char": "甚",
+"jyutping": "sam6",
+"vocab": [
+{
+"word": "甚至",
+"jyutping": ""
+},
+{
+"word": "甚麼",
+"jyutping": ""
+},
+{
+"word": "甚多",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 433,
+"Char": "太",
+"jyutping": "taai3",
+"vocab": [
+{
+"word": "太太",
+"jyutping": ""
+},
+{
+"word": "太空",
+"jyutping": ""
+},
+{
+"word": "太陽",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 434,
+"Char": "精",
+"jyutping": "zing1",
+"vocab": [
+{
+"word": "精神",
+"jyutping": ""
+},
+{
+"word": "精確",
+"jyutping": ""
+},
+{
+"word": "精華",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 435,
+"Char": "歷",
+"jyutping": "lik6",
+"vocab": [
+{
+"word": "歷史",
+"jyutping": ""
+},
+{
+"word": "經歷",
+"jyutping": ""
+},
+{
+"word": "日曆",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 436,
+"Char": "值",
+"jyutping": "zik6",
+"vocab": [
+{
+"word": "價值",
+"jyutping": ""
+},
+{
+"word": "值得",
+"jyutping": ""
+},
+{
+"word": "數值",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 437,
+"Char": "係",
+"jyutping": "hai6",
+"vocab": [
+{
+"word": "關係",
+"jyutping": ""
+},
+{
+"word": "系統",
+"jyutping": ""
+},
+{
+"word": "聯繫",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 438,
+"Char": "周",
+"jyutping": "zau1",
+"vocab": [
+{
+"word": "周期",
+"jyutping": ""
+},
+{
+"word": "周圍",
+"jyutping": ""
+},
+{
+"word": "周邊",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 439,
+"Char": "什",
+"jyutping": "sam6",
+"vocab": [
+{
+"word": "什麼",
+"jyutping": ""
+},
+{
+"word": "什物",
+"jyutping": ""
+},
+{
+"word": "什錦",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 440,
+"Char": "號",
+"jyutping": "hou6",
+"vocab": [
+{
+"word": "號碼",
+"jyutping": ""
+},
+{
+"word": "號召",
+"jyutping": ""
+},
+{
+"word": "符號",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 441,
+"Char": "族",
+"jyutping": "zuk6",
+"vocab": [
+{
+"word": "民族",
+"jyutping": ""
+},
+{
+"word": "種族",
+"jyutping": ""
+},
+{
+"word": "家族",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 442,
+"Char": "維",
+"jyutping": "wai4",
+"vocab": [
+{
+"word": "維護",
+"jyutping": ""
+},
+{
+"word": "維生素",
+"jyutping": ""
+},
+{
+"word": "維度",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 443,
+"Char": "劃",
+"jyutping": "waak6",
+"vocab": [
+{
+"word": "計劃",
+"jyutping": ""
+},
+{
+"word": "劃分",
+"jyutping": ""
+},
+{
+"word": "劃清",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 444,
+"Char": "選",
+"jyutping": "syun2",
+"vocab": [
+{
+"word": "選擇",
+"jyutping": ""
+},
+{
+"word": "選舉",
+"jyutping": ""
+},
+{
+"word": "選手",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 445,
+"Char": "標",
+"jyutping": "biu1",
+"vocab": [
+{
+"word": "標準",
+"jyutping": ""
+},
+{
+"word": "標誌",
+"jyutping": ""
+},
+{
+"word": "目標",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 446,
+"Char": "寫",
+"jyutping": "se2",
+"vocab": [
+{
+"word": "寫作",
+"jyutping": ""
+},
+{
+"word": "書寫",
+"jyutping": ""
+},
+{
+"word": "描寫",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 447,
+"Char": "存",
+"jyutping": "cyun4",
+"vocab": [
+{
+"word": "存在",
+"jyutping": ""
+},
+{
+"word": "生存",
+"jyutping": ""
+},
+{
+"word": "儲存",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 448,
+"Char": "候",
+"jyutping": "hau6",
+"vocab": [
+{
+"word": "時候",
+"jyutping": ""
+},
+{
+"word": "氣候",
+"jyutping": ""
+},
+{
+"word": "候補",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 449,
+"Char": "親",
+"jyutping": "can1",
+"vocab": [
+{
+"word": "親自",
+"jyutping": ""
+},
+{
+"word": "親戚",
+"jyutping": ""
+},
+{
+"word": "親密",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 450,
+"Char": "毛",
+"jyutping": "mau4",
+"vocab": [
+{
+"word": "毛病",
+"jyutping": ""
+},
+{
+"word": "毛巾",
+"jyutping": ""
+},
+{
+"word": "羊毛",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 451,
+"Char": "快",
+"jyutping": "faai3",
+"vocab": [
+{
+"word": "快速",
+"jyutping": ""
+},
+{
+"word": "愉快",
+"jyutping": ""
+},
+{
+"word": "快遞",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 452,
+"Char": "查",
+"jyutping": "caa4",
+"vocab": [
+{
+"word": "檢查",
+"jyutping": ""
+},
+{
+"word": "調查",
+"jyutping": ""
+},
+{
+"word": "查詢",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 453,
+"Char": "效",
+"jyutping": "haau6",
+"vocab": [
+{
+"word": "效果",
+"jyutping": ""
+},
+{
+"word": "效率",
+"jyutping": ""
+},
+{
+"word": "有效",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 454,
+"Char": "斯",
+"jyutping": "si1",
+"vocab": [
+{
+"word": "斯文",
+"jyutping": ""
+},
+{
+"word": "斯里蘭卡",
+"jyutping": ""
+},
+{
+"word": "斯大林",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 455,
+"Char": "院",
+"jyutping": "jyun2",
+"vocab": [
+{
+"word": "醫院",
+"jyutping": ""
+},
+{
+"word": "學院",
+"jyutping": ""
+},
+{
+"word": "法院",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 456,
+"Char": "江",
+"jyutping": "gong1",
+"vocab": [
+{
+"word": "江河",
+"jyutping": ""
+},
+{
+"word": "長江",
+"jyutping": ""
+},
+{
+"word": "江蘇",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 457,
+"Char": "型",
+"jyutping": "jing4",
+"vocab": [
+{
+"word": "類型",
+"jyutping": ""
+},
+{
+"word": "模型",
+"jyutping": ""
+},
+{
+"word": "典型",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 458,
+"Char": "眼",
+"jyutping": "ngaan5",
+"vocab": [
+{
+"word": "眼睛",
+"jyutping": ""
+},
+{
+"word": "眼光",
+"jyutping": ""
+},
+{
+"word": "目前",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 459,
+"Char": "王",
+"jyutping": "wong4",
+"vocab": [
+{
+"word": "王國",
+"jyutping": ""
+},
+{
+"word": "國王",
+"jyutping": ""
+},
+{
+"word": "女王",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 460,
+"Char": "按",
+"jyutping": "on3",
+"vocab": [
+{
+"word": "按照",
+"jyutping": ""
+},
+{
+"word": "按鈕",
+"jyutping": ""
+},
+{
+"word": "按摩",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 461,
+"Char": "格",
+"jyutping": "gaak3",
+"vocab": [
+{
+"word": "價格",
+"jyutping": ""
+},
+{
+"word": "風格",
+"jyutping": ""
+},
+{
+"word": "資格",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 462,
+"Char": "養",
+"jyutping": "joeng5",
+"vocab": [
+{
+"word": "養育",
+"jyutping": ""
+},
+{
+"word": "培養",
+"jyutping": ""
+},
+{
+"word": "休養",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 463,
+"Char": "易",
+"jyutping": "ji6",
+"vocab": [
+{
+"word": "容易",
+"jyutping": ""
+},
+{
+"word": "交易",
+"jyutping": ""
+},
+{
+"word": "改變",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 464,
+"Char": "置",
+"jyutping": "zi3",
+"vocab": [
+{
+"word": "設置",
+"jyutping": ""
+},
+{
+"word": "位置",
+"jyutping": ""
+},
+{
+"word": "處置",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 465,
+"Char": "派",
+"jyutping": "paai3",
+"vocab": [
+{
+"word": "派對",
+"jyutping": ""
+},
+{
+"word": "派遣",
+"jyutping": ""
+},
+{
+"word": "派生",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 466,
+"Char": "層",
+"jyutping": "cang4",
+"vocab": [
+{
+"word": "層次",
+"jyutping": ""
+},
+{
+"word": "層面",
+"jyutping": ""
+},
+{
+"word": "高層",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 467,
+"Char": "片",
+"jyutping": "pin3",
+"vocab": [
+{
+"word": "影片",
+"jyutping": ""
+},
+{
+"word": "片段",
+"jyutping": ""
+},
+{
+"word": "照片",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 468,
+"Char": "始",
+"jyutping": "ci2",
+"vocab": [
+{
+"word": "開始",
+"jyutping": ""
+},
+{
+"word": "原始",
+"jyutping": ""
+},
+{
+"word": "始終",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 469,
+"Char": "卻",
+"jyutping": "koek3",
+"vocab": [
+{
+"word": "卻是",
+"jyutping": ""
+},
+{
+"word": "冷卻",
+"jyutping": ""
+},
+{
+"word": "退卻",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 470,
+"Char": "專",
+"jyutping": "zyun1",
+"vocab": [
+{
+"word": "專業",
+"jyutping": ""
+},
+{
+"word": "專門",
+"jyutping": ""
+},
+{
+"word": "專利",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 471,
+"Char": "狀",
+"jyutping": "zong6",
+"vocab": [
+{
+"word": "狀況",
+"jyutping": ""
+},
+{
+"word": "形狀",
+"jyutping": ""
+},
+{
+"word": "狀語",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 472,
+"Char": "育",
+"jyutping": "juk6",
+"vocab": [
+{
+"word": "教育",
+"jyutping": ""
+},
+{
+"word": "體育",
+"jyutping": ""
+},
+{
+"word": "生育",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 473,
+"Char": "廠",
+"jyutping": "cong2",
+"vocab": [
+{
+"word": "工廠",
+"jyutping": ""
+},
+{
+"word": "廠房",
+"jyutping": ""
+},
+{
+"word": "出廠",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 474,
+"Char": "京",
+"jyutping": "ging1",
+"vocab": [
+{
+"word": "北京",
+"jyutping": ""
+},
+{
+"word": "南京",
+"jyutping": ""
+},
+{
+"word": "京劇",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 475,
+"Char": "識",
+"jyutping": "sik1",
+"vocab": [
+{
+"word": "認識",
+"jyutping": ""
+},
+{
+"word": "知識",
+"jyutping": ""
+},
+{
+"word": "識別",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 476,
+"Char": "適",
+"jyutping": "sik1",
+"vocab": [
+{
+"word": "適合",
+"jyutping": ""
+},
+{
+"word": "適應",
+"jyutping": ""
+},
+{
+"word": "舒適",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 477,
+"Char": "參",
+"jyutping": "cam1",
+"vocab": [
+{
+"word": "參加",
+"jyutping": ""
+},
+{
+"word": "參考",
+"jyutping": ""
+},
+{
+"word": "參觀",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 478,
+"Char": "屬",
+"jyutping": "suk6",
+"vocab": [
+{
+"word": "屬於",
+"jyutping": ""
+},
+{
+"word": "屬性",
+"jyutping": ""
+},
+{
+"word": "家屬",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 479,
+"Char": "圓",
+"jyutping": "jyun4",
+"vocab": [
+{
+"word": "圓滿",
+"jyutping": ""
+},
+{
+"word": "圓形",
+"jyutping": ""
+},
+{
+"word": "圓周",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 480,
+"Char": "包",
+"jyutping": "baau1",
+"vocab": [
+{
+"word": "包括",
+"jyutping": ""
+},
+{
+"word": "包裹",
+"jyutping": ""
+},
+{
+"word": "麵包",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 481,
+"Char": "火",
+"jyutping": "fo2",
+"vocab": [
+{
+"word": "火山",
+"jyutping": ""
+},
+{
+"word": "火車",
+"jyutping": ""
+},
+{
+"word": "火焰",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 482,
+"Char": "住",
+"jyutping": "zyu6",
+"vocab": [
+{
+"word": "居住",
+"jyutping": ""
+},
+{
+"word": "住址",
+"jyutping": ""
+},
+{
+"word": "住院",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 483,
+"Char": "滿",
+"jyutping": "mun5",
+"vocab": [
+{
+"word": "滿意",
+"jyutping": ""
+},
+{
+"word": "充滿",
+"jyutping": ""
+},
+{
+"word": "滿足",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 484,
+"Char": "縣",
+"jyutping": "jyun6",
+"vocab": [
+{
+"word": "縣城",
+"jyutping": ""
+},
+{
+"word": "縣政府",
+"jyutping": ""
+},
+{
+"word": "縣長",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 485,
+"Char": "局",
+"jyutping": "guk6",
+"vocab": [
+{
+"word": "局面",
+"jyutping": ""
+},
+{
+"word": "局部",
+"jyutping": ""
+},
+{
+"word": "當局",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 486,
+"Char": "照",
+"jyutping": "ziu3",
+"vocab": [
+{
+"word": "照顧",
+"jyutping": ""
+},
+{
+"word": "照片",
+"jyutping": ""
+},
+{
+"word": "按照",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 487,
+"Char": "準",
+"jyutping": "zeon2",
+"vocab": [
+{
+"word": "準備",
+"jyutping": ""
+},
+{
+"word": "標準",
+"jyutping": ""
+},
+{
+"word": "準時",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 488,
+"Char": "紅",
+"jyutping": "hung4",
+"vocab": [
+{
+"word": "紅色",
+"jyutping": ""
+},
+{
+"word": "紅軍",
+"jyutping": ""
+},
+{
+"word": "紅葉",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 489,
+"Char": "輕",
+"jyutping": "hing1",
+"vocab": [
+{
+"word": "輕鬆",
+"jyutping": ""
+},
+{
+"word": "年輕",
+"jyutping": ""
+},
+{
+"word": "輕微",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 490,
+"Char": "引",
+"jyutping": "jan5",
+"vocab": [
+{
+"word": "引起",
+"jyutping": ""
+},
+{
+"word": "吸引",
+"jyutping": ""
+},
+{
+"word": "引導",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 491,
+"Char": "細",
+"jyutping": "sai3",
+"vocab": [
+{
+"word": "細節",
+"jyutping": ""
+},
+{
+"word": "細心",
+"jyutping": ""
+},
+{
+"word": "細小",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 492,
+"Char": "聽",
+"jyutping": "ting1",
+"vocab": [
+{
+"word": "聽說",
+"jyutping": ""
+},
+{
+"word": "聽眾",
+"jyutping": ""
+},
+
+{
+"word": "聽力",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 493,
+"Char": "該",
+"jyutping": "goi1",
+"vocab": [
+{
+"word": "應該",
+"jyutping": ""
+},
+{
+"word": "該當",
+"jyutping": ""
+},
+{
+"word": "該次",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 494,
+"Char": "鐵",
+"jyutping": "tit3",
+"vocab": [
+{
+"word": "鐵路",
+"jyutping": ""
+},
+{
+"word": "鋼鐵",
+"jyutping": ""
+},
+{
+"word": "地鐵",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 495,
+"Char": "價",
+"jyutping": "gaa3",
+"vocab": [
+{
+"word": "價格",
+"jyutping": ""
+},
+{
+"word": "價值",
+"jyutping": ""
+},
+{
+"word": "價錢",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 496,
+"Char": "嚴",
+"jyutping": "jim4",
+"vocab": [
+{
+"word": "嚴格",
+"jyutping": ""
+},
+{
+"word": "嚴重",
+"jyutping": ""
+},
+{
+"word": "嚴密",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 497,
+"Char": "底",
+"jyutping": "dai2",
+"vocab": [
+{
+"word": "到底",
+"jyutping": ""
+},
+{
+"word": "底層",
+"jyutping": ""
+},
+{
+"word": "基礎",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 498,
+"Char": "首",
+"jyutping": "sau2",
+"vocab": [
+{
+"word": "首先",
+"jyutping": ""
+},
+{
+"word": "首都",
+"jyutping": ""
+},
+{
+"word": "首長",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 499,
+"Char": "液",
+"jyutping": "jik6",
+"vocab": [
+{
+"word": "液體",
+"jyutping": ""
+},
+{
+"word": "液態",
+"jyutping": ""
+},
+{
+"word": "血液",
+"jyutping": ""
+}
+]
+},
+{
+"Number": 500,
+"Char": "衛",
+"jyutping": "wai6",
+"vocab": [
+{
+"word": "衛生",
+"jyutping": ""
+},
+{
+"word": "衛星",
+"jyutping": ""
+},
+{
+"word": "保衛",
+"jyutping": ""
+}
+]
+}
+
+
+
+]; // <-- 結束您的 JSON 數組
+
+
+        // The base URL for the MP3 sound files
+        const mp3BaseUrl = "https://www.edbchinese.hk/EmbziciwebRes/jyutping/";
+
+        // Get DOM elements
+        const flashcard = document.getElementById('flashcard');
+        const numberDisplay = document.getElementById('number-display');
+        const charDisplay = document.getElementById('char-display');
+        const vocabDisplay = document.getElementById('vocab-display');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const cardNumberInput = document.getElementById('card-number-input');
+        const goBtn = document.getElementById('go-btn');
+        const randomBtn = document.getElementById('random-btn');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+
+        let currentCardIndex = 0;
+        let isFlipped = false;
+        let shuffledData = [...flashcardData]; // Start with a copy of the original data
+
+        // Function to update the card content
+        function updateCard() {
+            if (shuffledData.length === 0) {
+                 showMessage("數據加載失敗或為空。");
+                 return;
+            }
+            
+            const cardData = shuffledData[currentCardIndex];
+            numberDisplay.textContent = cardData.Number;
+            charDisplay.textContent = cardData.Char;
+
+            // Update the vocabulary on the back of the card
+            vocabDisplay.innerHTML = ''; // Clear previous content
+            
+            if (cardData.vocab && cardData.vocab.length > 0) {
+                cardData.vocab.forEach(vocabItem => {
+                    const vocabElement = document.createElement('p');
+                    vocabElement.className = "text-5xl font-bold leading-relaxed";
+                    
+                    // 檢查是否有粵拼。如果有，則顯示在括號中；如果沒有 (像您的數據一樣)，則只顯示詞彙。
+                    const pronunciationText = vocabItem.jyutping ? ` (${vocabItem.jyutping})` : '';
+                    vocabElement.textContent = `${vocabItem.word}${pronunciationText}`;
+
+                    vocabDisplay.appendChild(vocabElement);
+                });
+            } else {
+                 vocabDisplay.innerHTML = '<p class="text-3xl text-gray-300">沒有找到相關詞彙。</p>';
+            }
+
+            flashcard.classList.remove('is-flipped');
+            isFlipped = false;
+        }
+
+        // Function to play the audio
+        function playAudio() {
+            const pronunciation = shuffledData[currentCardIndex].jyutping;
+            if (pronunciation) {
+                // 使用字元自身的粵拼來播放音頻
+                const audioUrl = `${mp3BaseUrl}${pronunciation}.mp3`;
+                const audio = new Audio(audioUrl);
+                audio.play().catch(error => {
+                    console.error("音頻播放失敗:", error);
+                    showMessage(`找不到 "${pronunciation}" 的音頻。`);
+                });
+            } else {
+                 showMessage("此字元沒有發音數據。");
+            }
+        }
+        
+        function showMessage(msg) {
+            messageText.textContent = msg;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Function to shuffle the array (Fisher-Yates algorithm)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Event listeners
+        flashcard.addEventListener('click', () => {
+            // 當卡片翻轉到正面 (字元) 時，播放聲音
+            if (!isFlipped) {
+                playAudio();
+            }
+            flashcard.classList.toggle('is-flipped');
+            isFlipped = !isFlipped;
+        });
+
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevents card flip
+            currentCardIndex = (currentCardIndex + 1) % shuffledData.length;
+            updateCard();
+        });
+
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevents card flip
+            currentCardIndex = (currentCardIndex - 1 + shuffledData.length) % shuffledData.length;
+            updateCard();
+        });
+
+        // Event listener for the "Go" button
+        function goToCard() {
+            const number = parseInt(cardNumberInput.value, 10);
+            // 注意: findIndex 尋找的是 Number 屬性
+            const foundIndex = shuffledData.findIndex(card => card.Number === number);
+            
+            if (foundIndex === -1) {
+                showMessage(`找不到號碼為 ${number} 的卡片。`);
+            } else {
+                currentCardIndex = foundIndex;
+                updateCard();
+            }
+            cardNumberInput.value = ''; // Clear the input field
+        }
+
+        goBtn.addEventListener('click', goToCard);
+
+        // Event listener for the Enter key on the input field
+        cardNumberInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                goToCard();
+            }
+        });
+
+        // Event listener for the "Random" button
+        randomBtn.addEventListener('click', () => {
+            shuffledData = shuffleArray(shuffledData);
+            currentCardIndex = 0;
+            updateCard();
+            showMessage("閃卡已隨機排序！");
+        });
+
+        // Initialize the app with the first card
+        window.onload = updateCard;
+    </script>
+</body>
+</html>
